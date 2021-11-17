@@ -3,12 +3,15 @@ package main
 import (
 	"flag"
 	"fmt"
-	"golDistributed/stubsServer"
+	"golDistributed/stubsClientToServer"
 	"math/rand"
 	"net"
 	"net/rpc"
 	"time"
 )
+
+var oWorld [][]uint8
+var turn int
 
 func makeMatrix(height, width int) [][]uint8 {
 	matrix := make([][]uint8, height)
@@ -79,7 +82,20 @@ func copySlice(original [][]uint8) [][]uint8 {
 	return sliceCopy
 }
 
-func (s *GameOfLife) ProcessWorld(req stubsServer.Request, res *stubsServer.Response) (err error) {
+func (t *GameOfLife) ProcessAliveCellsCount(req stubsClientToServer.RequestAliveCellsCount, res *stubsClientToServer.ResponseToAliveCellsCount) (err error) {
+	aliveCells := 0
+	for y := 0; y < req.ImageHeight; y++ {
+		for x := 0; x < req.ImageWidth; x++ {
+			if oWorld[y][x] == 255 {
+				aliveCells++
+			}
+		}
+	}
+	res.AliveCellsCount = aliveCells
+	return
+}
+
+func (s *GameOfLife) ProcessWorld(req stubsClientToServer.Request, res *stubsClientToServer.Response) (err error) {
 	turn := 0
 	oWorld := makeMatrix(req.ImageHeight, req.ImageWidth)
 	cpyWorld := makeMatrix(req.ImageHeight, req.ImageWidth)
@@ -93,7 +109,7 @@ func (s *GameOfLife) ProcessWorld(req stubsServer.Request, res *stubsServer.Resp
 			//}
 		}
 	}
-	fmt.Println("Required turns: %T",req.Turns)
+	fmt.Println("Required turns: %T", req.Turns)
 	for turn < req.Turns {
 		turn++
 		immutableWorld := makeImmutableMatrix(oWorld)

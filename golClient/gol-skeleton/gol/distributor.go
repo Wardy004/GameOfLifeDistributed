@@ -4,8 +4,9 @@ import "C"
 import (
 	"fmt"
 	"net/rpc"
+	"time"
 
-	"uk.ac.bris.cs/gameoflife/stubsServer"
+	"uk.ac.bris.cs/gameoflife/stubsClientToServer"
 	"uk.ac.bris.cs/gameoflife/util"
 )
 
@@ -65,6 +66,20 @@ func getLiveCells(p Params, oWorld [][]uint8) []util.Cell {
 	return liveCells
 }
 
+func tickerfunc(done chan bool, ticker time.Ticker, client *rpc.Client, p Params, c distributorChannels) {
+	for {
+		select {
+		case <-done:
+			return
+		case <-ticker.C:
+			response := new(stubsClientToServer.ResponseToAliveCellsCount)
+			request := new(stubsClientToServer.RequestAliveCellsCount{ImageHeight: p.ImageHeight, ImageWidth: p.ImageWidth})
+			client.Call(stubsClientToServer.ProcessTimerEventsHandler, request, response)
+			c.events <- AliveCellsCount{CompletedTurns: response.Turn, CellsCount: response.AliveCellsCount}
+		}
+	}
+}
+
 // distributor divides the work between workers and interacts with other goroutines.
 func distributor(p Params, c distributorChannels, keyPresses <-chan rune) {
 	c.ioCommand <- ioInput
@@ -84,13 +99,14 @@ func distributor(p Params, c distributorChannels, keyPresses <-chan rune) {
 	defer client.Close()
 
 	go processKeyPresses(c, keyPresses)
+	done := make(chan bool)
+	ticker := time.NewTicker(2 * time.Second)
+	go tickerfunc(done, ticker, client, p, c)
 
-	outputBoard(oWorld, p, c)
-
-	response := new(stubsServer.Response)
-	request := stubsServer.Request{WorldSection: oWorld, ImageHeight: p.ImageHeight, ImageWidth: p.ImageWidth, Turns: p.Turns}
-	client.Call(stubsServer.ProcessWorldHandler, request, response)
-
+	response := new(stubsClientToServer.Response)
+	request := stubsClientToServer.Request{WorldSection: oWorld, ImageHeight: p.ImageHeight, ImageWidth: p.ImageWidth, Turns: p.Turns}
+	client.Call(stubsClientToServer.ProcessWorldHandler, request, response)
+	done <- true
 	cellsAlive := getLiveCells(p, response.ProcessedWorld)
 	// Make sure that the Io has finished any output before exiting.
 	c.events <- FinalTurnComplete{CompletedTurns: p.Turns, Alive: cellsAlive}

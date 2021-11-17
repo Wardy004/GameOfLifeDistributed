@@ -8,4 +8,6 @@ type Response struct {
 
 type Request struct {
 	//create vars and completeworld slice for all events to be passed back to client
+	AliveCellsCount int
+	Image
 }

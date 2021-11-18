@@ -1,4 +1,4 @@
-package stubsServer
+package stubsClientToServer
 
 var ProcessWorldHandler = "GameOfLife.ProcessWorld"
 var ProcessTimerEventsHandler = "GameOfLife.ProcessAliveCellsCount"
@@ -16,6 +16,7 @@ type Request struct {
 
 type ResponseToAliveCellsCount struct {
 	AliveCellsCount int
+	Turn int
 }
 
 type RequestAliveCellsCount struct {

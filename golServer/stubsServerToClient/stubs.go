@@ -1,4 +1,4 @@
-package stubsClient
+package stubsServerToClient
 
 var ReverseHandler = "Client.HandleEvents"
 

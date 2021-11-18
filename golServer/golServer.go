@@ -13,6 +13,9 @@ import (
 var oWorld [][]uint8
 var turn int
 
+type GameOfLife struct{}
+
+
 func makeMatrix(height, width int) [][]uint8 {
 	matrix := make([][]uint8, height)
 	for i := range matrix {
@@ -68,8 +71,6 @@ func performTurn(world func(y, x int) uint8, newWorld [][]uint8, imageHeight, im
 	}
 }
 
-type GameOfLife struct{}
-
 func copySlice(original [][]uint8) [][]uint8 {
 	height := len(original)
 	width := len(original[0])
@@ -82,24 +83,31 @@ func copySlice(original [][]uint8) [][]uint8 {
 	return sliceCopy
 }
 
-func (t *GameOfLife) ProcessAliveCellsCount(req stubsClientToServer.RequestAliveCellsCount, res *stubsClientToServer.ResponseToAliveCellsCount) (err error) {
+func (s *GameOfLife) ProcessAliveCellsCount(req stubsClientToServer.RequestAliveCellsCount , res *stubsClientToServer.ResponseToAliveCellsCount) (err error) {
 	aliveCells := 0
-	for y := 0; y < req.ImageHeight; y++ {
-		for x := 0; x < req.ImageWidth; x++ {
-			if oWorld[y][x] == 255 {
-				aliveCells++
+	if turn > 0 {
+		fmt.Println(fmt.Sprintf("ProcessAliveCells called on turn: %d",turn))
+		for y := 0; y < req.ImageHeight; y++ {
+			for x := 0; x < req.ImageWidth; x++ {
+				fmt.Println(fmt.Sprintf("checking cell: %d",x * y))
+				if oWorld[y][x] == 255 {
+					aliveCells++
+				}
 			}
 		}
-	}
-	res.AliveCellsCount = aliveCells
+		res.AliveCellsCount = aliveCells
+		res.Turn = 0
+	} else {res.AliveCellsCount = 0
+		res.Turn = 0}
 	return
 }
 
 func (s *GameOfLife) ProcessWorld(req stubsClientToServer.Request, res *stubsClientToServer.Response) (err error) {
-	turn := 0
-	oWorld := makeMatrix(req.ImageHeight, req.ImageWidth)
+	turn = 0
+	fmt.Println("Entering ProcessWorld function")
+	oWorld = makeMatrix(req.ImageHeight, req.ImageWidth)
 	cpyWorld := makeMatrix(req.ImageHeight, req.ImageWidth)
-	fmt.Println()
+	
 	for y := 0; y < req.ImageHeight; y++ {
 		for x := 0; x < req.ImageWidth; x++ {
 			oWorld[y][x] = req.WorldSection[y][x]
@@ -109,14 +117,15 @@ func (s *GameOfLife) ProcessWorld(req stubsClientToServer.Request, res *stubsCli
 			//}
 		}
 	}
-	fmt.Println("Required turns: %T", req.Turns)
+	fmt.Println("oWorld and cpyWorld populated")
+
 	for turn < req.Turns {
+		fmt.Println(fmt.Sprintf("main loop turn: %d",turn))
 		turn++
 		immutableWorld := makeImmutableMatrix(oWorld)
 		performTurn(immutableWorld, cpyWorld, req.ImageHeight, req.ImageWidth)
 		oWorld = cpyWorld
 		cpyWorld = copySlice(oWorld)
-		fmt.Println("Turn: %T", turn)
 	}
 	res.ProcessedWorld = oWorld
 	return

@@ -1,8 +1,7 @@
-package stubsServer
+package stubsClientToServer
 
 var ProcessWorldHandler = "GameOfLife.ProcessWorld"
-
-//var keyPressesHandler = "GameOfLife.processKeyPresses"
+var ProcessTimerEventsHandler = "GameOfLife.ProcessAliveCellsCount"
 
 type Response struct {
 	ProcessedWorld [][]uint8
@@ -13,4 +12,14 @@ type Request struct {
 	ImageHeight  int
 	ImageWidth   int
 	Turns        int
+}
+
+type ResponseToAliveCellsCount struct {
+	AliveCellsCount int
+	Turn int
+}
+
+type RequestAliveCellsCount struct {
+	ImageHeight int
+	ImageWidth  int
 }

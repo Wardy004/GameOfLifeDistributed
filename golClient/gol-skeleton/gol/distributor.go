@@ -5,9 +5,10 @@ import (
 	"fmt"
 	"net/rpc"
 	"time"
-
 	"uk.ac.bris.cs/gameoflife/stubsClientToServer"
 	"uk.ac.bris.cs/gameoflife/util"
+
+	//"uk.ac.bris.cs/gameoflife/util"
 )
 
 type distributorChannels struct {
@@ -18,6 +19,7 @@ type distributorChannels struct {
 	ioOutput   chan<- uint8
 	ioInput    <-chan uint8
 }
+
 
 func makeMatrix(height, width int) [][]uint8 {
 	matrix := make([][]uint8, height)
@@ -66,15 +68,21 @@ func getLiveCells(p Params, oWorld [][]uint8) []util.Cell {
 	return liveCells
 }
 
-func tickerfunc(done chan bool, ticker time.Ticker, client *rpc.Client, p Params, c distributorChannels) {
+
+func tickerFunc(done chan bool, ticker time.Ticker, client *rpc.Client, p Params, c distributorChannels) {
 	for {
 		select {
 		case <-done:
 			return
 		case <-ticker.C:
 			response := new(stubsClientToServer.ResponseToAliveCellsCount)
-			request := new(stubsClientToServer.RequestAliveCellsCount{ImageHeight: p.ImageHeight, ImageWidth: p.ImageWidth})
-			client.Call(stubsClientToServer.ProcessTimerEventsHandler, request, response)
+			request := stubsClientToServer.RequestAliveCellsCount{ImageHeight: p.ImageHeight, ImageWidth: p.ImageWidth}
+			err := client.Call(stubsClientToServer.ProcessTimerEventsHandler, request, response)
+			if err != nil {
+				fmt.Println(err.Error())
+			}
+			fmt.Println(fmt.Sprintf("tickerAliveCells call made on turn: %d",response.Turn))
+			fmt.Println(fmt.Sprintf("tickerAliveCells call made with aliveCells: %d",response.AliveCellsCount))
 			c.events <- AliveCellsCount{CompletedTurns: response.Turn, CellsCount: response.AliveCellsCount}
 		}
 	}
@@ -97,14 +105,12 @@ func distributor(p Params, c distributorChannels, keyPresses <-chan rune) {
 		fmt.Println(err.Error())
 	}
 	defer client.Close()
-
-	go processKeyPresses(c, keyPresses)
 	done := make(chan bool)
 	ticker := time.NewTicker(2 * time.Second)
-	go tickerfunc(done, ticker, client, p, c)
-
 	response := new(stubsClientToServer.Response)
 	request := stubsClientToServer.Request{WorldSection: oWorld, ImageHeight: p.ImageHeight, ImageWidth: p.ImageWidth, Turns: p.Turns}
+	go processKeyPresses(c, keyPresses)
+	go tickerFunc(done, *ticker, client, p, c)
 	client.Call(stubsClientToServer.ProcessWorldHandler, request, response)
 	done <- true
 	cellsAlive := getLiveCells(p, response.ProcessedWorld)

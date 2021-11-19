@@ -2,7 +2,6 @@ package main
 
 import (
 	"flag"
-	"fmt"
 	"golDistributed/stubsClientToServer"
 	"math/rand"
 	"net"
@@ -85,7 +84,6 @@ func copySlice(original [][]uint8) [][]uint8 {
 
 func (s *GameOfLife) ProcessAliveCellsCount(req stubsClientToServer.RequestAliveCellsCount , res *stubsClientToServer.ResponseToAliveCellsCount) (err error) {
 	aliveCells := 0
-	fmt.Println(fmt.Sprintf("ProcessAliveCells called on turn: %d",turn))
 	for y := 0; y < req.ImageHeight; y++ {
 		for x := 0; x < req.ImageWidth; x++ {
 			if oWorld[y][x] == 255 {
@@ -100,7 +98,6 @@ func (s *GameOfLife) ProcessAliveCellsCount(req stubsClientToServer.RequestAlive
 
 func (s *GameOfLife) ProcessWorld(req stubsClientToServer.Request, res *stubsClientToServer.Response) (err error) {
 	turn = 0
-	fmt.Println("Entering ProcessWorld function")
 	oWorld = makeMatrix(req.ImageHeight, req.ImageWidth)
 	cpyWorld := makeMatrix(req.ImageHeight, req.ImageWidth)
 	
@@ -113,7 +110,6 @@ func (s *GameOfLife) ProcessWorld(req stubsClientToServer.Request, res *stubsCli
 			//}
 		}
 	}
-	fmt.Println("oWorld and cpyWorld populated")
 
 	for turn < req.Turns {
 		immutableWorld := makeImmutableMatrix(oWorld)
@@ -123,6 +119,7 @@ func (s *GameOfLife) ProcessWorld(req stubsClientToServer.Request, res *stubsCli
 		cpyWorld = copySlice(oWorld)
 	}
 	res.ProcessedWorld = oWorld
+
 	return
 }
 

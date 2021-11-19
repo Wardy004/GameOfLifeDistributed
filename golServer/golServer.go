@@ -85,20 +85,16 @@ func copySlice(original [][]uint8) [][]uint8 {
 
 func (s *GameOfLife) ProcessAliveCellsCount(req stubsClientToServer.RequestAliveCellsCount , res *stubsClientToServer.ResponseToAliveCellsCount) (err error) {
 	aliveCells := 0
-	if turn > 0 {
-		fmt.Println(fmt.Sprintf("ProcessAliveCells called on turn: %d",turn))
-		for y := 0; y < req.ImageHeight; y++ {
-			for x := 0; x < req.ImageWidth; x++ {
-				fmt.Println(fmt.Sprintf("checking cell: %d",x * y))
-				if oWorld[y][x] == 255 {
-					aliveCells++
-				}
+	fmt.Println(fmt.Sprintf("ProcessAliveCells called on turn: %d",turn))
+	for y := 0; y < req.ImageHeight; y++ {
+		for x := 0; x < req.ImageWidth; x++ {
+			if oWorld[y][x] == 255 {
+				aliveCells++
 			}
 		}
-		res.AliveCellsCount = aliveCells
-		res.Turn = 0
-	} else {res.AliveCellsCount = 0
-		res.Turn = 0}
+	}
+	res.AliveCellsCount = aliveCells
+	res.Turn = turn
 	return
 }
 
@@ -120,10 +116,9 @@ func (s *GameOfLife) ProcessWorld(req stubsClientToServer.Request, res *stubsCli
 	fmt.Println("oWorld and cpyWorld populated")
 
 	for turn < req.Turns {
-		fmt.Println(fmt.Sprintf("main loop turn: %d",turn))
-		turn++
 		immutableWorld := makeImmutableMatrix(oWorld)
 		performTurn(immutableWorld, cpyWorld, req.ImageHeight, req.ImageWidth)
+		turn++
 		oWorld = cpyWorld
 		cpyWorld = copySlice(oWorld)
 	}

@@ -6,9 +6,8 @@ import (
 	"net/rpc"
 	"time"
 	"uk.ac.bris.cs/gameoflife/stubsClientToServer"
+	"uk.ac.bris.cs/gameoflife/stubsKeyPresses"
 	"uk.ac.bris.cs/gameoflife/util"
-
-	//"uk.ac.bris.cs/gameoflife/util"
 )
 
 type distributorChannels struct {
@@ -39,18 +38,22 @@ func outputBoard(world [][]byte, p Params, c distributorChannels) {
 	}
 }
 
-func processKeyPresses(c distributorChannels, keyPresses <-chan rune) {
+func processKeyPresses(client *rpc.Client , keyPresses <-chan rune, p Params, c distributorChannels {
 	for {
 		select {
 		case key := <-keyPresses:
+			response := new(stubsKeyPresses.ResponseToKeyPress)
+			request := new(stubsKeyPresses.RequestFromKeyPress)
 			switch key {
 			case 112: // P: pause processing and print current turn, if p pressed again then resume
-
+				request.KeyPressed = "p"
 			case 113: // Q: Generate PGM file with current state of board and terminate
-
+				request.KeyPressed = "q"
 			case 115: // S: Generate PGM file with current state of board
-
+				request.KeyPressed = "s"
 			}
+			client.Call(stubsKeyPresses.KeyPressesHandler,request,response)
+			if key == 115 {outputBoard(response.WorldSection,p,c)}
 		}
 	}
 }
@@ -81,8 +84,6 @@ func tickerFunc(done chan bool, ticker time.Ticker, client *rpc.Client, p Params
 			if err != nil {
 				fmt.Println(err.Error())
 			}
-			fmt.Println(fmt.Sprintf("tickerAliveCells call made on turn: %d",response.Turn))
-			fmt.Println(fmt.Sprintf("tickerAliveCells call made with aliveCells: %d",response.AliveCellsCount))
 			c.events <- AliveCellsCount{CompletedTurns: response.Turn, CellsCount: response.AliveCellsCount}
 		}
 	}
@@ -109,13 +110,15 @@ func distributor(p Params, c distributorChannels, keyPresses <-chan rune) {
 	ticker := time.NewTicker(2 * time.Second)
 	response := new(stubsClientToServer.Response)
 	request := stubsClientToServer.Request{WorldSection: oWorld, ImageHeight: p.ImageHeight, ImageWidth: p.ImageWidth, Turns: p.Turns}
-	go processKeyPresses(c, keyPresses)
+	go processKeyPresses(client, keyPresses,p,c)
 	go tickerFunc(done, *ticker, client, p, c)
 	client.Call(stubsClientToServer.ProcessWorldHandler, request, response)
+	ticker.Stop()
 	done <- true
 	cellsAlive := getLiveCells(p, response.ProcessedWorld)
 	// Make sure that the Io has finished any output before exiting.
 	c.events <- FinalTurnComplete{CompletedTurns: p.Turns, Alive: cellsAlive}
+	outputBoard(response.ProcessedWorld,p,c)
 	c.ioCommand <- ioCheckIdle
 	<-c.ioIdle
 	c.events <- StateChange{p.Turns, Quitting}

@@ -2,16 +2,19 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"golDistributed/stubsClientToServer"
+	"golDistributed/stubsKeyPresses"
 	"math/rand"
 	"net"
 	"net/rpc"
+	"testing"
 	"time"
 )
 
 var oWorld [][]uint8
 var turn int
-
+var pause,quit chan bool
 type GameOfLife struct{}
 
 
@@ -82,6 +85,19 @@ func copySlice(original [][]uint8) [][]uint8 {
 	return sliceCopy
 }
 
+func (s *GameOfLife) processKeyPresses(req stubsKeyPresses.RequestFromKeyPress, res *stubsKeyPresses.ResponseToKeyPress) (err error) {
+		switch req.KeyPressed {
+		case "p":
+			pause<-true
+		case "q":
+			quit<-true
+		case "s":
+			res.WorldSection = oWorld
+		}
+	return
+}
+
+
 func (s *GameOfLife) ProcessAliveCellsCount(req stubsClientToServer.RequestAliveCellsCount , res *stubsClientToServer.ResponseToAliveCellsCount) (err error) {
 	aliveCells := 0
 	for y := 0; y < req.ImageHeight; y++ {
@@ -110,16 +126,22 @@ func (s *GameOfLife) ProcessWorld(req stubsClientToServer.Request, res *stubsCli
 			//}
 		}
 	}
-
+	quit:
 	for turn < req.Turns {
-		immutableWorld := makeImmutableMatrix(oWorld)
-		performTurn(immutableWorld, cpyWorld, req.ImageHeight, req.ImageWidth)
-		turn++
-		oWorld = cpyWorld
-		cpyWorld = copySlice(oWorld)
+		select {
+		case <-pause:
+			<-pause
+		case <-quit:
+			break quit
+		default:
+			immutableWorld := makeImmutableMatrix(oWorld)
+			performTurn(immutableWorld, cpyWorld, req.ImageHeight, req.ImageWidth)
+			turn++
+			oWorld = cpyWorld
+			cpyWorld = copySlice(oWorld)
+		}
 	}
 	res.ProcessedWorld = oWorld
-
 	return
 }
 

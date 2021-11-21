@@ -43,6 +43,8 @@ func outputBoard(world [][]byte, p Params, c distributorChannels) {
 func processKeyPresses(client *rpc.Client , keyPresses <-chan rune,done <-chan bool, p Params, c distributorChannels) {
 	for {
 		select {
+		case <-done:
+			return
 		case key := <-keyPresses:
 			response := new(stubsKeyPresses.ResponseToKeyPress)
 			request := new(stubsKeyPresses.RequestFromKeyPress)

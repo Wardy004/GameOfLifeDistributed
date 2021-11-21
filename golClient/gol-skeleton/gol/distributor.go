@@ -10,6 +10,8 @@ import (
 	"uk.ac.bris.cs/gameoflife/util"
 )
 
+var lastKeyPressed string
+
 type distributorChannels struct {
 	events     chan<- Event
 	ioCommand  chan<- ioCommand
@@ -38,7 +40,7 @@ func outputBoard(world [][]byte, p Params, c distributorChannels) {
 	}
 }
 
-func processKeyPresses(client *rpc.Client , keyPresses <-chan rune, p Params, c distributorChannels {
+func processKeyPresses(client *rpc.Client , keyPresses <-chan rune, p Params, c distributorChannels) {
 	for {
 		select {
 		case key := <-keyPresses:
@@ -49,8 +51,11 @@ func processKeyPresses(client *rpc.Client , keyPresses <-chan rune, p Params, c 
 				request.KeyPressed = "p"
 			case 113: // Q: Generate PGM file with current state of board and terminate
 				request.KeyPressed = "q"
+				lastKeyPressed = "q"
 			case 115: // S: Generate PGM file with current state of board
 				request.KeyPressed = "s"
+			case 107: // K Generate PGM file and shutdown server
+				request.KeyPressed = "k"
 			}
 			client.Call(stubsKeyPresses.KeyPressesHandler,request,response)
 			if key == 115 {outputBoard(response.WorldSection,p,c)}
@@ -118,7 +123,7 @@ func distributor(p Params, c distributorChannels, keyPresses <-chan rune) {
 	cellsAlive := getLiveCells(p, response.ProcessedWorld)
 	// Make sure that the Io has finished any output before exiting.
 	c.events <- FinalTurnComplete{CompletedTurns: p.Turns, Alive: cellsAlive}
-	outputBoard(response.ProcessedWorld,p,c)
+	if lastKeyPressed != "q" {outputBoard(response.ProcessedWorld,p,c)}
 	c.ioCommand <- ioCheckIdle
 	<-c.ioIdle
 	c.events <- StateChange{p.Turns, Quitting}

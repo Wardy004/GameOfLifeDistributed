@@ -40,7 +40,7 @@ func outputBoard(world [][]byte, p Params, c distributorChannels) {
 	}
 }
 
-func processKeyPresses(client *rpc.Client , keyPresses <-chan rune, p Params, c distributorChannels) {
+func processKeyPresses(client *rpc.Client , keyPresses <-chan rune,done <-chan bool, p Params, c distributorChannels) {
 	for {
 		select {
 		case key := <-keyPresses:
@@ -115,10 +115,11 @@ func distributor(p Params, c distributorChannels, keyPresses <-chan rune) {
 	ticker := time.NewTicker(2 * time.Second)
 	response := new(stubsClientToServer.Response)
 	request := stubsClientToServer.Request{WorldSection: oWorld, ImageHeight: p.ImageHeight, ImageWidth: p.ImageWidth, Turns: p.Turns}
-	go processKeyPresses(client, keyPresses,p,c)
+	go processKeyPresses(client, keyPresses,done,p,c)
 	go tickerFunc(done, *ticker, client, p, c)
 	client.Call(stubsClientToServer.ProcessWorldHandler, request, response)
 	ticker.Stop()
+	done <- true
 	done <- true
 	cellsAlive := getLiveCells(p, response.ProcessedWorld)
 	// Make sure that the Io has finished any output before exiting.

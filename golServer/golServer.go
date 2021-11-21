@@ -2,19 +2,18 @@ package main
 
 import (
 	"flag"
-	"fmt"
 	"golDistributed/stubsClientToServer"
 	"golDistributed/stubsKeyPresses"
 	"math/rand"
 	"net"
 	"net/rpc"
-	"testing"
 	"time"
 )
 
 var oWorld [][]uint8
 var turn int
 var pause,quit chan bool
+var shutdown bool
 type GameOfLife struct{}
 
 
@@ -93,6 +92,9 @@ func (s *GameOfLife) processKeyPresses(req stubsKeyPresses.RequestFromKeyPress, 
 			quit<-true
 		case "s":
 			res.WorldSection = oWorld
+		case "k":
+			quit<-true
+			shutdown=true
 		}
 	return
 }
@@ -152,5 +154,9 @@ func main() {
 	rpc.Register(&GameOfLife{})
 	listener, _ := net.Listen("tcp", ":"+*pAddr)
 	defer listener.Close()
-	rpc.Accept(listener)
+	for {
+		rpc.Accept(listener)
+		if shutdown {break}
+	}
+
 }

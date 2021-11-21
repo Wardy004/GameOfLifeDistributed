@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"golDistributed/stubsClientToServer"
 	"golDistributed/stubsKeyPresses"
 	"math/rand"
@@ -84,15 +85,22 @@ func copySlice(original [][]uint8) [][]uint8 {
 	return sliceCopy
 }
 
-func (s *GameOfLife) processKeyPresses(req stubsKeyPresses.RequestFromKeyPress, res *stubsKeyPresses.ResponseToKeyPress) (err error) {
+func (s *GameOfLife) ProcessKeyPresses(req stubsKeyPresses.RequestFromKeyPress, res *stubsKeyPresses.ResponseToKeyPress) (err error) {
+	fmt.Println("processKeyPresses function entered")
 		switch req.KeyPressed {
 		case "p":
+			fmt.Println("p pressed")
+			res.Turn = turn
 			pause<-true
+			fmt.Println(fmt.Sprintf("Puased on turn: %d",turn))
 		case "q":
+			fmt.Println("q pressed")
 			quit<-true
 		case "s":
+			fmt.Println("s pressed")
 			res.WorldSection = oWorld
 		case "k":
+			fmt.Println("k pressed")
 			quit<-true
 			shutdown=true
 		}
@@ -132,7 +140,9 @@ func (s *GameOfLife) ProcessWorld(req stubsClientToServer.Request, res *stubsCli
 	for turn < req.Turns {
 		select {
 		case <-pause:
+			fmt.Println("Paused waiting a black")
 			<-pause
+			fmt.Println("Resumed")
 		case <-quit:
 			break quit
 		default:

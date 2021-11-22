@@ -166,6 +166,9 @@ func main() {
 	defer listener.Close()
 	go rpc.Accept(listener)
 	for {
-		if shutdown {break}
+		if shutdown {
+			time.Sleep(time.Second * 1)
+			break
+		}
 	}
 }

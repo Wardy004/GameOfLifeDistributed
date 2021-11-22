@@ -1,10 +1,11 @@
 package stubsKeyPresses
 
-var KeyPressesHandler = "GameOfLifeKeyPress.HandleEvents"
+var KeyPressHandler = "GameOfLife.ProcessKeyPresses"
 
 type ResponseToKeyPress struct {
-	//case s world is returned
-	WorldSection [][]uint8
+
+	WorldSection [][]uint8 	//case s world is returned
+	Turn int //case p need to print turn
 }
 
 type RequestFromKeyPress struct {

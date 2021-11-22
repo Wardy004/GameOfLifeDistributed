@@ -86,10 +86,8 @@ func copySlice(original [][]uint8) [][]uint8 {
 }
 
 func (s *GameOfLife) ProcessKeyPresses(req stubsKeyPresses.RequestFromKeyPress, res *stubsKeyPresses.ResponseToKeyPress) (err error) {
-	fmt.Println("processKeyPresses function entered")
 		switch req.KeyPressed {
 		case "p":
-			fmt.Println("p pressed")
 			res.Turn = turn
 			pause<-true
 			fmt.Println(fmt.Sprintf("Puased on turn: %d",turn))
@@ -124,6 +122,8 @@ func (s *GameOfLife) ProcessAliveCellsCount(req stubsClientToServer.RequestAlive
 
 func (s *GameOfLife) ProcessWorld(req stubsClientToServer.Request, res *stubsClientToServer.Response) (err error) {
 	turn = 0
+	quit = make(chan bool)
+	pause = make(chan bool)
 	oWorld = makeMatrix(req.ImageHeight, req.ImageWidth)
 	cpyWorld := makeMatrix(req.ImageHeight, req.ImageWidth)
 	
@@ -138,9 +138,9 @@ func (s *GameOfLife) ProcessWorld(req stubsClientToServer.Request, res *stubsCli
 	}
 	quit:
 	for turn < req.Turns {
+		fmt.Println(fmt.Sprintf("Turn: %d",turn))
 		select {
 		case <-pause:
-			fmt.Println("Paused waiting a black")
 			<-pause
 			fmt.Println("Resumed")
 		case <-quit:

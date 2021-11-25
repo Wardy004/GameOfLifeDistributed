@@ -3,12 +3,14 @@ package main
 import (
 	"flag"
 	"fmt"
-	"golDistributed/stubsClientToServer"
+	"golDistributed/stubsBrokerToWorker"
 	"golDistributed/stubsKeyPresses"
+	"golDistributed/stubsWorkerToBroker"
 	"math/rand"
 	"net"
 	"net/rpc"
 	"time"
+	"uk.ac.bris.cs/gameoflife/stubsClientToServer"
 )
 
 var oWorld [][]uint8
@@ -85,6 +87,11 @@ func copySlice(original [][]uint8) [][]uint8 {
 	return sliceCopy
 }
 
+func (s *GameOfLife) HandleWorker(req stubsWorkerToBroker.Request, res *stubsWorkerToBroker.Response) (err error) {
+
+	return
+}
+
 func (s *GameOfLife) ProcessKeyPresses(req stubsKeyPresses.RequestFromKeyPress, res *stubsKeyPresses.ResponseToKeyPress) (err error) {
 		switch req.KeyPressed {
 		case "p":
@@ -106,7 +113,7 @@ func (s *GameOfLife) ProcessKeyPresses(req stubsKeyPresses.RequestFromKeyPress, 
 }
 
 
-func (s *GameOfLife) ProcessAliveCellsCount(req stubsClientToServer.RequestAliveCellsCount , res *stubsClientToServer.ResponseToAliveCellsCount) (err error) {
+func (s *GameOfLife) ProcessAliveCellsCount(req stubsBrokerToWorker.RequestAliveCellsCount , res *stubsBrokerToWorker.ResponseToAliveCellsCount) (err error) {
 	aliveCells := 0
 	for y := 0; y < req.ImageHeight; y++ {
 		for x := 0; x < req.ImageWidth; x++ {
@@ -120,7 +127,7 @@ func (s *GameOfLife) ProcessAliveCellsCount(req stubsClientToServer.RequestAlive
 	return
 }
 
-func (s *GameOfLife) ProcessWorld(req stubsClientToServer.Request, res *stubsClientToServer.Response) (err error) {
+func (s *GameOfLife) ProcessWorld(req stubsBrokerToWorker.Request, res *stubsBrokerToWorker.Response) (err error) {
 	turn = 0
 	quit = make(chan bool)
 	pause = make(chan bool)
@@ -158,6 +165,21 @@ func (s *GameOfLife) ProcessWorld(req stubsClientToServer.Request, res *stubsCli
 }
 
 func main() {
+	mySocketAddress := "127.0.0.1:8030"
+	broker := "127.0.0.1:8030"
+	fmt.Println("Server: " + broker)
+	client, err := rpc.Dial("tcp", broker)
+	if err != nil {
+		panic(err)
+	}
+	defer client.Close()
+	response := new(stubsWorkerToBroker.Response)
+	request := stubsWorkerToBroker.Request{SocketAddress: mySocketAddress}
+	err = client.Call(stubsWorkerToBroker.HandleWorker, request, response)
+	if err != nil {
+		panic(err)
+	}
+
 	pAddr := flag.String("port", "8030", "Port to listen on")
 	flag.Parse()
 	rand.Seed(time.Now().UnixNano())

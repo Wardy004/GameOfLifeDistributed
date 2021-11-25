@@ -1,4 +1,4 @@
-package stubsClientToServer
+package stubsClientToBroker
 
 var ProcessWorldHandler = "GameOfLife.ProcessWorld"
 var ProcessTimerEventsHandler = "GameOfLife.ProcessAliveCellsCount"

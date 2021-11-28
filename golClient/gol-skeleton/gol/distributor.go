@@ -90,7 +90,6 @@ func getLiveCells(p Params, oWorld [][]uint8) []util.Cell {
 	return liveCells
 }
 
-
 func tickerFunc(done chan bool, ticker time.Ticker, client *rpc.Client, p Params, c distributorChannels) {
 	for {
 		select {

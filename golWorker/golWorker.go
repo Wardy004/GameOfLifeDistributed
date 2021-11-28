@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"golDistributed/stubsWorkerToWorker"
 	"golDistributed/stubsBrokerToWorker"
 	"golDistributed/stubsKeyPresses"
 	"golDistributed/stubsWorkerToBroker"
@@ -10,13 +11,15 @@ import (
 	"net"
 	"net/rpc"
 	"time"
-	"uk.ac.bris.cs/gameoflife/stubsClientToServer"
 )
 
 var oWorld [][]uint8
-var turn int
-var pause,quit chan bool
-var shutdown bool
+var Turn int
+var Pause chan bool
+var Quit chan bool
+var RowExchange chan bool
+var Shutdown bool
+
 type GameOfLife struct{}
 
 
@@ -36,7 +39,7 @@ func makeImmutableMatrix(matrix [][]uint8) func(y, x int) uint8 {
 
 func performTurn(world func(y, x int) uint8, newWorld [][]uint8, imageHeight, imageWidth int) {
 
-	for y := 0; y < imageHeight; y++ {
+	for y := 1; y < imageHeight-1; y++ { //from 1 to <= to account for padding
 		for x := 0; x < imageWidth; x++ {
 
 			aliveCells := 0
@@ -87,35 +90,37 @@ func copySlice(original [][]uint8) [][]uint8 {
 	return sliceCopy
 }
 
-func (s *GameOfLife) HandleWorker(req stubsWorkerToBroker.Request, res *stubsWorkerToBroker.Response) (err error) {
-
-	return
+func getBottomHalo(BottomWorker *rpc.Client) {
+	request := stubsWorkerToWorker.RequestRow{Turn: Turn,Row: oWorld[len(oWorld)-1]} //pass bottom row to bottom worker
+	response := new(stubsWorkerToWorker.ResponseRow)
+	BottomWorker.Call(stubsWorkerToWorker.ProcessRowExchange,request,response) //get bottom row from bottom worker
+	oWorld[len(oWorld)-1] = response.Row
+	RowExchange<-true
 }
 
 func (s *GameOfLife) ProcessKeyPresses(req stubsKeyPresses.RequestFromKeyPress, res *stubsKeyPresses.ResponseToKeyPress) (err error) {
 		switch req.KeyPressed {
 		case "p":
-			res.Turn = turn
-			pause<-true
-			fmt.Println(fmt.Sprintf("Puased on turn: %d",turn))
+			res.Turn = Turn
+			Pause<-true
+			fmt.Println(fmt.Sprintf("Puased on Turn: %d",Turn))
 		case "q":
 			fmt.Println("q pressed")
-			quit<-true
+			Quit<-true
 		case "s":
 			fmt.Println("s pressed")
 			res.WorldSection = oWorld
 		case "k":
 			fmt.Println("k pressed")
-			quit<-true
-			shutdown=true
+			Quit<-true
+			Shutdown=true
 		}
 	return
 }
 
-
 func (s *GameOfLife) ProcessAliveCellsCount(req stubsBrokerToWorker.RequestAliveCellsCount , res *stubsBrokerToWorker.ResponseToAliveCellsCount) (err error) {
 	aliveCells := 0
-	for y := 0; y < req.ImageHeight; y++ {
+	for y := 1; y < req.ImageHeight-1; y++ { //Halo regions avoided
 		for x := 0; x < req.ImageWidth; x++ {
 			if oWorld[y][x] == 255 {
 				aliveCells++
@@ -123,44 +128,57 @@ func (s *GameOfLife) ProcessAliveCellsCount(req stubsBrokerToWorker.RequestAlive
 		}
 	}
 	res.AliveCellsCount = aliveCells
-	res.Turn = turn
+	res.Turn = Turn
+	return
+}
+
+func (s *GameOfLife) ProcessRowExchange(req stubsWorkerToWorker.RequestRow , res *stubsWorkerToWorker.ResponseRow) (err error) {
+	for {
+		if req.Turn == Turn {
+			oWorld[0] = req.Row
+			res.Row = oWorld[1]
+			break
+		}
+	}
+	RowExchange<-true
 	return
 }
 
 func (s *GameOfLife) ProcessWorld(req stubsBrokerToWorker.Request, res *stubsBrokerToWorker.Response) (err error) {
-	turn = 0
-	quit = make(chan bool)
-	pause = make(chan bool)
+	Turn = 0
+	Quit = make(chan bool)
+	Pause = make(chan bool)
+	RowExchange = make(chan bool)
+	BottomWorker, err := rpc.Dial("tcp",req.BottomSocketAddress)
 	oWorld = makeMatrix(req.ImageHeight, req.ImageWidth)
 	cpyWorld := makeMatrix(req.ImageHeight, req.ImageWidth)
-	
 	for y := 0; y < req.ImageHeight; y++ {
 		for x := 0; x < req.ImageWidth; x++ {
 			oWorld[y][x] = req.WorldSection[y][x]
 			cpyWorld[y][x] = oWorld[y][x]
-			//if oWorld[y][x] == 255 {
-			//c.events <- CellFlipped{CompletedTurns: 1, Cell: util.Cell{X: x, Y: y}}
-			//}
 		}
 	}
-	quit:
-	for turn < req.Turns {
-		fmt.Println(fmt.Sprintf("Turn: %d",turn))
+	Quit:
+	for Turn < req.Turns {
+		fmt.Println(fmt.Sprintf("Turn: %d",Turn))
 		select {
-		case <-pause:
-			<-pause
+		case <-Pause:
+			<-Pause
 			fmt.Println("Resumed")
-		case <-quit:
-			break quit
+		case <-Quit:
+			break Quit
 		default:
 			immutableWorld := makeImmutableMatrix(oWorld)
 			performTurn(immutableWorld, cpyWorld, req.ImageHeight, req.ImageWidth)
-			turn++
 			oWorld = cpyWorld
+			Turn++
+			go getBottomHalo(BottomWorker)
+			<-RowExchange
+			<-RowExchange
 			cpyWorld = copySlice(oWorld)
 		}
 	}
-	res.ProcessedWorld = oWorld
+	res.ProcessedSection = oWorld[1:len(req.WorldSection)-1]
 	return
 }
 
@@ -188,7 +206,7 @@ func main() {
 	defer listener.Close()
 	go rpc.Accept(listener)
 	for {
-		if shutdown {
+		if Shutdown {
 			time.Sleep(time.Second * 1)
 			break
 		}

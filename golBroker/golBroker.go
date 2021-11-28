@@ -3,20 +3,29 @@ package main
 import (
 	"flag"
 	"fmt"
+	"golDist/stubsBrokerToWorker"
 	"golDist/stubsClientToBroker"
 	"golDist/stubsKeyPresses"
+	"golDist/stubsWorkerToBroker"
+	"math"
 	"math/rand"
 	"net"
 	"net/rpc"
 	"time"
 )
 
-var oWorld [][]uint8
-var turn int
-var pause,quit chan bool
 var shutdown bool
+var workerAddresses []string
+var workers []worker
+var ImageHeight int
+var ImageWidth int
 type GameOfLife struct{}
 
+type worker struct {
+	client *rpc.Client
+	ImageHeight int
+	ImageWidth int
+}
 
 func makeMatrix(height, width int) [][]uint8 {
 	matrix := make([][]uint8, height)
@@ -26,51 +35,95 @@ func makeMatrix(height, width int) [][]uint8 {
 	return matrix
 }
 
-func copySlice(original [][]uint8) [][]uint8 {
-	height := len(original)
-	width := len(original[0])
-	sliceCopy := makeMatrix(height, width)
-	for y := 0; y < height; y++ {
-		for x := 0; x < width; x++ {
-			sliceCopy[y][x] = original[y][x]
-		}
+func makeWorkerSlice(world [][]uint8, blockLen,blockNo int) [][]uint8 {
+	worldSection := makeMatrix(blockLen+2, ImageWidth)
+	//top halo
+	worldSection = append(worldSection,world[((blockNo*blockLen)-1+ImageHeight) % ImageHeight])
+	//main section to be modified
+	for x:=blockNo*blockLen;x<blockLen;x++{
+		worldSection = append(worldSection,world[x])
 	}
-	return sliceCopy
+	//bottom halo
+	worldSection = append(worldSection,world[((blockNo*(blockLen+1))+ImageHeight) % ImageHeight])
+	return worldSection
 }
 
-func (s *GameOfLife) ProcessKeyPresses(req stubsKeyPresses.RequestFromKeyPress, res *stubsKeyPresses.ResponseToKeyPress) (err error) {
-		switch req.KeyPressed {
-		case "p":
-			res.Turn = turn
-			pause<-true
-			fmt.Println(fmt.Sprintf("Puased on turn: %d",turn))
-		case "q":
-			fmt.Println("q pressed")
-			quit<-true
-		case "s":
-			fmt.Println("s pressed")
-			res.WorldSection = oWorld
-		case "k":
-			fmt.Println("k pressed")
-			quit<-true
-			shutdown=true
-		}
+func runWorker(WorkerSocket,BottomSocket string,section [][]uint8,blockLen,turns int, finishedSection chan<- [][]uint8) {
+	fmt.Println("Worker: " + WorkerSocket)
+	client, err := rpc.Dial("tcp", WorkerSocket)
+	workers = append(workers, worker{client: client,ImageHeight:blockLen+2,ImageWidth: len(section[0])})
+	if err != nil {panic(err)}
+	defer client.Close()
+	response := new(stubsBrokerToWorker.Response)
+	//ImageHeight passed includes the halos
+	request := stubsBrokerToWorker.Request{WorldSection:section,ImageHeight:blockLen+2,ImageWidth:len(section[0]) ,Turns: turns,BottomSocketAddress: BottomSocket}
+	err = client.Call(stubsWorkerToBroker.HandleWorker, request, response)
+	if err != nil {panic(err)}
+	finishedSection <- section
+}
+
+func (s *GameOfLife) RegisterWorker(req stubsWorkerToBroker.Request, res *stubsWorkerToBroker.Response) (err error) {
+	workerAddresses = append(workerAddresses, req.SocketAddress)
+	res = nil
 	return
 }
 
+func (s *GameOfLife) ProcessKeyPresses(req stubsKeyPresses.RequestFromKeyPress, res *stubsKeyPresses.ResponseToKeyPress) (err error) {
+	var currentWorld [][]uint8
+	if req.KeyPressed == "s" || req.KeyPressed == "k" {currentWorld = makeMatrix(ImageHeight,ImageWidth)}
+	for _,worker := range workers {
+		worker.client.Call(stubsKeyPresses.KeyPressHandler,req,res)
+		if req.KeyPressed == "s" || req.KeyPressed == "k" {currentWorld = append(currentWorld, res.WorldSection...)}
+	}
+	if req.KeyPressed == "s" || req.KeyPressed == "k" {res.WorldSection = currentWorld}
+	if req.KeyPressed == "k" {shutdown = true}
+	return
+}
 
 func (s *GameOfLife) ProcessAliveCellsCount(req stubsClientToBroker.RequestAliveCellsCount , res *stubsClientToBroker.ResponseToAliveCellsCount) (err error) {
-	aliveCells := 0
-
-	res.AliveCellsCount = aliveCells
-	res.Turn = turn
+	totalAliveCells := 0
+	for _,worker := range workers {
+		response := new(stubsClientToBroker.ResponseToAliveCellsCount)
+		request := stubsClientToBroker.RequestAliveCellsCount{ImageHeight:worker.ImageHeight, ImageWidth:worker.ImageWidth}
+		worker.client.Call(stubsClientToBroker.ProcessTimerEventsHandler,request,response)
+		totalAliveCells += response.AliveCellsCount
+	}
+	res.AliveCellsCount = totalAliveCells
 	return
 }
 
 func (s *GameOfLife) ProcessWorld(req stubsClientToBroker.Request, res *stubsClientToBroker.Response) (err error) {
+	blockCount := 0
+	ImageHeight = req.ImageHeight
+	ImageWidth = req.ImageWidth
+	workers := len(workerAddresses)
+	blockLen := int(math.Floor(float64(req.ImageHeight) / float64(workers)))
+	workerDone := make([]chan [][]uint8, workers)
+
+	if workers > 0 && workers <= req.ImageHeight  {
+		for yPos := 0; yPos <= req.ImageHeight-blockLen; yPos += blockLen {
+			BottomSocket := workerAddresses[(blockCount+workers+1)%workers]
+			worldSection := makeWorkerSlice(req.WorldSection,blockLen,blockCount)
+			go runWorker(workerAddresses[blockCount],BottomSocket,worldSection,blockLen,req.Turns,workerDone[blockCount])
+			blockCount++
+			if blockCount == workers-1 && req.ImageHeight-(yPos+blockLen) > blockLen {break}
+		}
+		if blockCount != workers {
+			BottomSocket := workerAddresses[0]
+			worldSection := makeWorkerSlice(req.WorldSection,blockLen,blockCount)
+			go runWorker(workerAddresses[blockCount],BottomSocket,worldSection,blockLen,req.Turns,workerDone[blockCount])
+			blockCount++
+		}
+		finishedWorld := makeMatrix(req.ImageHeight,req.ImageWidth)
+		for x:=0;x<workers;x++{
+			finishedWorld = append(finishedWorld,<-workerDone[x]...)
+		}
+		res.ProcessedWorld = finishedWorld
+	} else {panic("No workers available")}
 
 	return
 }
+
 
 func main() {
 	pAddr := flag.String("port", "8030", "Port to listen on")

@@ -122,6 +122,7 @@ func (s *GameOfLife) ProcessWorld(req stubsClientToBroker.Request, res *stubsCli
 		fmt.Println("broker processWorld 6")
 		finishedWorld := makeMatrix(req.ImageHeight,req.ImageWidth)
 		for x:=0;x<workers;x++{
+			fmt.Println("got work back from worker")
 			finishedWorld = append(finishedWorld,<-workerDone[x]...)
 		}
 		res.ProcessedWorld = finishedWorld

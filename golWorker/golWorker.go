@@ -146,11 +146,14 @@ func (s *GameOfLife) ProcessRowExchange(req stubsWorkerToWorker.RequestRow , res
 }
 
 func (s *GameOfLife) ProcessWorld(req stubsBrokerToWorker.Request, res *stubsBrokerToWorker.Response) (err error) {
+	fmt.Println("I'm a worker about to process a world")
 	Turn = 0
 	Quit = make(chan bool)
 	Pause = make(chan bool)
 	RowExchange = make(chan bool)
+	fmt.Println("worker 1")
 	BottomWorker, err := rpc.Dial("tcp",req.BottomSocketAddress)
+	fmt.Println("worker 2")
 	oWorld = makeMatrix(req.ImageHeight, req.ImageWidth)
 	cpyWorld := makeMatrix(req.ImageHeight, req.ImageWidth)
 	for y := 0; y < req.ImageHeight; y++ {
@@ -169,13 +172,19 @@ func (s *GameOfLife) ProcessWorld(req stubsBrokerToWorker.Request, res *stubsBro
 		case <-Quit:
 			break Quit
 		default:
+			fmt.Println("worker 3")
 			immutableWorld := makeImmutableMatrix(oWorld)
+			fmt.Println("worker 4")
 			performTurn(immutableWorld, cpyWorld, req.ImageHeight, req.ImageWidth)
+			fmt.Println("worker 5")
 			oWorld = cpyWorld
 			Turn++
+			fmt.Println("worker 6")
 			go getBottomHalo(BottomWorker)
+			fmt.Println("worker 7")
 			<-RowExchange
 			<-RowExchange
+			fmt.Println("worker 8")
 			cpyWorld = copySlice(oWorld)
 		}
 	}

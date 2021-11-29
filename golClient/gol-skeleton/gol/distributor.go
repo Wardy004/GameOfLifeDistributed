@@ -117,7 +117,7 @@ func distributor(p Params, c distributorChannels, keyPresses <-chan rune) {
 			oWorld[y][x] = <-c.ioInput
 		}
 	}
-	server := "127.0.0.1:8030"
+	server := "172.31.17.136:8030"
 	fmt.Println("Server: " + server)
 	client, err := rpc.Dial("tcp", server)
 	if err != nil {

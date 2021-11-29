@@ -135,13 +135,15 @@ func distributor(p Params, c distributorChannels, keyPresses <-chan rune) {
 	go processKeyPresses(client, keyPresses,done,p,c)
 	fmt.Println("distributor 3")
 	go tickerFunc(done, *ticker, client, p, c)
-	client.Call(stubsClientToServer.ProcessWorldHandler, request, response)
-	ticker.Stop()
 	fmt.Println("distributor 4")
+	client.Call(stubsClientToServer.ProcessWorldHandler, request, response)
+	fmt.Println("distributor 5")
+	ticker.Stop()
+	fmt.Println("distributor 6")
 	done <- true
 	done <- true
 	cellsAlive := getLiveCells(p, response.ProcessedWorld)
-	fmt.Println("distributor 5")
+	fmt.Println("distributor 7")
 	// Make sure that the Io has finished any output before exiting.
 	c.events <- FinalTurnComplete{CompletedTurns: p.Turns, Alive: cellsAlive}
 	if lastKeyPressed != "q" {outputBoard(response.ProcessedWorld,p,c)}

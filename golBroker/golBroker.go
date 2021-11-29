@@ -93,32 +93,39 @@ func (s *GameOfLife) ProcessAliveCellsCount(req stubsClientToBroker.RequestAlive
 }
 
 func (s *GameOfLife) ProcessWorld(req stubsClientToBroker.Request, res *stubsClientToBroker.Response) (err error) {
+	fmt.Println("broker processWorld 1")
 	blockCount := 0
 	ImageHeight = req.ImageHeight
 	ImageWidth = req.ImageWidth
 	workers := len(workerAddresses)
 	blockLen := int(math.Floor(float64(req.ImageHeight) / float64(workers)))
 	workerDone := make([]chan [][]uint8, workers)
+	fmt.Println("broker processWorld 2")
 
 	if workers > 0 && workers <= req.ImageHeight  {
+		fmt.Println("broker processWorld 3")
 		for yPos := 0; yPos <= req.ImageHeight-blockLen; yPos += blockLen {
+			fmt.Println("broker processWorld 4")
 			BottomSocket := workerAddresses[(blockCount+workers+1)%workers]
 			worldSection := makeWorkerSlice(req.WorldSection,blockLen,blockCount)
 			go runWorker(workerAddresses[blockCount],BottomSocket,worldSection,blockLen,req.Turns,workerDone[blockCount])
 			blockCount++
 			if blockCount == workers-1 && req.ImageHeight-(yPos+blockLen) > blockLen {break}
 		}
+		fmt.Println("broker processWorld 5")
 		if blockCount != workers {
 			BottomSocket := workerAddresses[0]
 			worldSection := makeWorkerSlice(req.WorldSection,blockLen,blockCount)
 			go runWorker(workerAddresses[blockCount],BottomSocket,worldSection,blockLen,req.Turns,workerDone[blockCount])
 			blockCount++
 		}
+		fmt.Println("broker processWorld 6")
 		finishedWorld := makeMatrix(req.ImageHeight,req.ImageWidth)
 		for x:=0;x<workers;x++{
 			finishedWorld = append(finishedWorld,<-workerDone[x]...)
 		}
 		res.ProcessedWorld = finishedWorld
+		fmt.Println("broker processWorld 7")
 	} else {panic("No workers available")}
 
 	return

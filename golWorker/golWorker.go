@@ -161,14 +161,14 @@ func (s *GameOfLife) ProcessWorld(req stubsBrokerToWorker.Request, res *stubsBro
 
 	for y := 0; y < req.ImageHeight; y++ {
 		for x := 0; x < req.ImageWidth; x++ {
-			fmt.Println("ProcessWorld 2.1")
+			//fmt.Println("ProcessWorld 2.1")
 			oWorld[y][x] = req.WorldSection[y][x]
 			cpyWorld[y][x] = oWorld[y][x]
 		}
 	}
-	fmt.Println("ProcessWorld 2.2")
+	fmt.Println("Number of turns is", req.Turns)
 
-	Quit:
+	//Quit:
 	for Turn < req.Turns {
 		fmt.Println(fmt.Sprintf("Turn: %d",Turn))
 		select {
@@ -176,7 +176,7 @@ func (s *GameOfLife) ProcessWorld(req stubsBrokerToWorker.Request, res *stubsBro
 			<-Pause
 			fmt.Println("Resumed")
 		case <-Quit:
-			break Quit
+			//break Quit
 		default:
 			fmt.Println("ProcessWorld 3")
 			immutableWorld := makeImmutableMatrix(oWorld)

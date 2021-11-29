@@ -151,9 +151,9 @@ func (s *GameOfLife) ProcessWorld(req stubsBrokerToWorker.Request, res *stubsBro
 	Quit = make(chan bool)
 	Pause = make(chan bool)
 	RowExchange = make(chan bool)
-	fmt.Println("worker 1")
+	fmt.Println("ProcessWorld 1")
 	BottomWorker, err := rpc.Dial("tcp",req.BottomSocketAddress)
-	fmt.Println("worker 2")
+	fmt.Println("ProcessWorld 2")
 	oWorld = makeMatrix(req.ImageHeight, req.ImageWidth)
 	cpyWorld := makeMatrix(req.ImageHeight, req.ImageWidth)
 	for y := 0; y < req.ImageHeight; y++ {
@@ -172,19 +172,19 @@ func (s *GameOfLife) ProcessWorld(req stubsBrokerToWorker.Request, res *stubsBro
 		case <-Quit:
 			break Quit
 		default:
-			fmt.Println("worker 3")
+			fmt.Println("ProcessWorld 3")
 			immutableWorld := makeImmutableMatrix(oWorld)
-			fmt.Println("worker 4")
+			fmt.Println("ProcessWorld 4")
 			performTurn(immutableWorld, cpyWorld, req.ImageHeight, req.ImageWidth)
-			fmt.Println("worker 5")
+			fmt.Println("ProcessWorld 5")
 			oWorld = cpyWorld
 			Turn++
-			fmt.Println("worker 6")
+			fmt.Println("ProcessWorld 6")
 			go getBottomHalo(BottomWorker)
-			fmt.Println("worker 7")
+			fmt.Println("ProcessWorld 7")
 			<-RowExchange
 			<-RowExchange
-			fmt.Println("worker 8")
+			fmt.Println("ProcessWorld 8")
 			cpyWorld = copySlice(oWorld)
 		}
 	}
@@ -196,14 +196,21 @@ func main() {
 	mySocketAddress := os.Args[1]
 	broker := os.Args[2]
 	fmt.Println("Server: " + broker)
+	fmt.Println("worker 1")
 	client, err := rpc.Dial("tcp", broker)
+	fmt.Println("worker 2")
 	if err != nil {
 		panic(err)
 	}
+	fmt.Println("worker 3")
 	defer client.Close()
+	fmt.Println("worker 4")
 	response := new(stubsWorkerToBroker.Response)
+	fmt.Println("worker 5")
 	request := stubsWorkerToBroker.Request{SocketAddress: mySocketAddress}
+	fmt.Println("worker 6")
 	err = client.Call(stubsWorkerToBroker.HandleWorker, request, response)
+	fmt.Println("worker 7")
 	if err != nil {
 		panic(err)
 	}
@@ -211,7 +218,9 @@ func main() {
 	pAddr := flag.String("port", "8030", "Port to listen on")
 	flag.Parse()
 	rand.Seed(time.Now().UnixNano())
+	fmt.Println("worker 8")
 	rpc.Register(&GameOfLife{})
+	fmt.Println("worker 9")
 	listener, _ := net.Listen("tcp", ":"+*pAddr)
 	defer listener.Close()
 	go rpc.Accept(listener)

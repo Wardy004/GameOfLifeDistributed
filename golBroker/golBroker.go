@@ -62,7 +62,7 @@ func runWorker(WorkerSocket,BottomSocket string,section [][]uint8,blockLen,turns
 	//ImageHeight passed includes the halos
 	request := stubsBrokerToWorker.Request{WorldSection:section,ImageHeight:blockLen+2,ImageWidth:len(section[0]) ,Turns: turns,BottomSocketAddress: BottomSocket}
 	fmt.Println("runWorker 5")
-	err = client.Call(stubsWorkerToBroker.HandleWorker, request, response)
+	err = client.Call(stubsBrokerToWorker.ProcessWorldHandler, request, response)
 	fmt.Println("runWorker 6")
 	if err != nil {panic(err)}
 	finishedSection <- section

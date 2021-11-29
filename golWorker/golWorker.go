@@ -3,13 +3,14 @@ package main
 import (
 	"flag"
 	"fmt"
-	"golDistributed/stubsWorkerToWorker"
 	"golDistributed/stubsBrokerToWorker"
 	"golDistributed/stubsKeyPresses"
 	"golDistributed/stubsWorkerToBroker"
+	"golDistributed/stubsWorkerToWorker"
 	"math/rand"
 	"net"
 	"net/rpc"
+	"os"
 	"time"
 )
 
@@ -183,7 +184,7 @@ func (s *GameOfLife) ProcessWorld(req stubsBrokerToWorker.Request, res *stubsBro
 }
 
 func main() {
-	mySocketAddress := "127.0.0.1:8030"
+	mySocketAddress := os.Args[1]
 	broker := "127.0.0.1:8030"
 	fmt.Println("Server: " + broker)
 	client, err := rpc.Dial("tcp", broker)

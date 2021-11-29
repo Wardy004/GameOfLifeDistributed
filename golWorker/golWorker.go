@@ -194,7 +194,7 @@ func (s *GameOfLife) ProcessWorld(req stubsBrokerToWorker.Request, res *stubsBro
 			cpyWorld = copySlice(oWorld)
 		}
 	}
-	res.ProcessedSection = oWorld[1:len(req.WorldSection)-1]
+	res.ProcessedSection = oWorld
 	return
 }
 

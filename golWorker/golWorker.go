@@ -185,7 +185,7 @@ func (s *GameOfLife) ProcessWorld(req stubsBrokerToWorker.Request, res *stubsBro
 
 func main() {
 	mySocketAddress := os.Args[1]
-	broker := "127.0.0.1:8030"
+	broker := os.Args[2]
 	fmt.Println("Server: " + broker)
 	client, err := rpc.Dial("tcp", broker)
 	if err != nil {

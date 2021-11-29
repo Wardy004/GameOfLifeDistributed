@@ -161,10 +161,12 @@ func (s *GameOfLife) ProcessWorld(req stubsBrokerToWorker.Request, res *stubsBro
 
 	for y := 0; y < req.ImageHeight; y++ {
 		for x := 0; x < req.ImageWidth; x++ {
+			fmt.Println("ProcessWorld 2.1")
 			oWorld[y][x] = req.WorldSection[y][x]
 			cpyWorld[y][x] = oWorld[y][x]
 		}
 	}
+	fmt.Println("ProcessWorld 2.2")
 
 	Quit:
 	for Turn < req.Turns {

@@ -51,18 +51,25 @@ func makeWorkerSlice(world [][]uint8, blockLen,blockNo int) [][]uint8 {
 func runWorker(WorkerSocket,BottomSocket string,section [][]uint8,blockLen,turns int, finishedSection chan<- [][]uint8) {
 	fmt.Println("Worker: " + WorkerSocket)
 	client, err := rpc.Dial("tcp", WorkerSocket)
+	fmt.Println("runWorker 1")
 	workers = append(workers, worker{client: client,ImageHeight:blockLen+2,ImageWidth: len(section[0])})
+	fmt.Println("runWorker 2")
 	if err != nil {panic(err)}
 	defer client.Close()
+	fmt.Println("runWorker 3")
 	response := new(stubsBrokerToWorker.Response)
+	fmt.Println("runWorker 4")
 	//ImageHeight passed includes the halos
 	request := stubsBrokerToWorker.Request{WorldSection:section,ImageHeight:blockLen+2,ImageWidth:len(section[0]) ,Turns: turns,BottomSocketAddress: BottomSocket}
+	fmt.Println("runWorker 5")
 	err = client.Call(stubsWorkerToBroker.HandleWorker, request, response)
+	fmt.Println("runWorker 6")
 	if err != nil {panic(err)}
 	finishedSection <- section
 }
 
 func (s *GameOfLife) RegisterWorker(req stubsWorkerToBroker.Request, res *stubsWorkerToBroker.Response) (err error) {
+	fmt.Println("registering a worker")
 	workerAddresses = append(workerAddresses, req.SocketAddress)
 	res = nil
 	return

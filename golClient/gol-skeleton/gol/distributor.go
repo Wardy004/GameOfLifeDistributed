@@ -78,6 +78,7 @@ func processKeyPresses(client *rpc.Client , keyPresses <-chan rune,done <-chan b
 }
 
 func getLiveCells(p Params, oWorld [][]uint8) []util.Cell {
+	fmt.Println("distributor getLiveCells")
 	liveCells := make([]util.Cell, 0)
 	for x := 0; x < p.ImageWidth; x++ {
 		for y := 0; y < p.ImageHeight; y++ {
@@ -140,6 +141,7 @@ func distributor(p Params, c distributorChannels, keyPresses <-chan rune) {
 	done <- true
 	done <- true
 	cellsAlive := getLiveCells(p, response.ProcessedWorld)
+	fmt.Println("distributor 5")
 	// Make sure that the Io has finished any output before exiting.
 	c.events <- FinalTurnComplete{CompletedTurns: p.Turns, Alive: cellsAlive}
 	if lastKeyPressed != "q" {outputBoard(response.ProcessedWorld,p,c)}

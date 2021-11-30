@@ -38,7 +38,7 @@ func makeImmutableMatrix(matrix [][]uint8) func(y, x int) uint8 {
 	}
 }
 
-func performTurn(world func(y, x int) uint8, newWorld [][]uint8, imageHeight, imageWidth int) {
+func performTurn(world func(y, x int) uint8, newWorld [][]uint8, imageHeight, imageWidth int) [][]uint8{
 
 	for y := 1; y < imageHeight-1; y++ { //from 1 to <= to account for padding
 		for x := 0; x < imageWidth; x++ {
@@ -77,6 +77,7 @@ func performTurn(world func(y, x int) uint8, newWorld [][]uint8, imageHeight, im
 			}
 		}
 	}
+	return newWorld
 }
 
 func copySlice(original [][]uint8) [][]uint8 {
@@ -174,7 +175,7 @@ func (s *GameOfLife) ProcessWorld(req stubsBrokerToWorker.Request, res *stubsBro
 			break Quit
 		default:
 			immutableWorld := makeImmutableMatrix(oWorld)
-			performTurn(immutableWorld, cpyWorld, req.ImageHeight, req.ImageWidth)
+			cpyWorld = performTurn(immutableWorld, cpyWorld, req.ImageHeight, req.ImageWidth)
 			oWorld = cpyWorld
 			Turn++
 			go getBottomHalo(BottomWorker)

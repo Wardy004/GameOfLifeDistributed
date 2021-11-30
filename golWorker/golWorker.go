@@ -38,7 +38,7 @@ func makeImmutableMatrix(matrix [][]uint8) func(y, x int) uint8 {
 	}
 }
 
-func performTurn(world func(y, x int) uint8, newWorld [][]uint8, imageHeight, imageWidth int) [][]uint8{
+func performTurn(world func(y, x int) uint8, newWorld [][]uint8, imageHeight, imageWidth int){
 
 	for y := 1; y < imageHeight-1; y++ { //from 1 to <= to account for padding
 		for x := 0; x < imageWidth; x++ {
@@ -77,19 +77,6 @@ func performTurn(world func(y, x int) uint8, newWorld [][]uint8, imageHeight, im
 			}
 		}
 	}
-	return newWorld
-}
-
-func copySlice(original [][]uint8) [][]uint8 {
-	height := len(original)
-	width := len(original[0])
-	sliceCopy := makeMatrix(height, width)
-	for y := 0; y < height; y++ {
-		for x := 0; x < width; x++ {
-			sliceCopy[y][x] = original[y][x]
-		}
-	}
-	return sliceCopy
 }
 
 func getBottomHalo(BottomWorker *rpc.Client) {
@@ -175,13 +162,13 @@ func (s *GameOfLife) ProcessWorld(req stubsBrokerToWorker.Request, res *stubsBro
 			break Quit
 		default:
 			immutableWorld := makeImmutableMatrix(oWorld)
-			var newData = performTurn(immutableWorld, cpyWorld, req.ImageHeight, req.ImageWidth)
-			oWorld = copySlice(newData)
+			performTurn(immutableWorld, cpyWorld, req.ImageHeight, req.ImageWidth)
+			oWorld = cpyWorld
 			Turn++
 			go getBottomHalo(BottomWorker)
 			<-RowExchange
 			<-RowExchange
-			cpyWorld = copySlice(oWorld)
+			cpyWorld = makeMatrix(req.ImageHeight, req.ImageWidth)
 		}
 	}
 

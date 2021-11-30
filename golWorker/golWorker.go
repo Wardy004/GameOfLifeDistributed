@@ -149,6 +149,12 @@ func (s *GameOfLife) ProcessRowExchange(req stubsWorkerToWorker.RequestRow , res
 	return
 }
 
+func printWorld(world [][]uint8) {
+	for y:=0;y<len(world);y++{
+		fmt.Println(world[y])
+	}
+}
+
 func (s *GameOfLife) ProcessWorld(req stubsBrokerToWorker.Request, res *stubsBrokerToWorker.Response) (err error) {
 	Turn = 0
 	Quit = make(chan bool)
@@ -185,7 +191,7 @@ func (s *GameOfLife) ProcessWorld(req stubsBrokerToWorker.Request, res *stubsBro
 			go getBottomHalo(BottomWorker)
 			<-RowExchange
 			<-RowExchange
-			fmt.Println(oWorld)
+			printWorld(oWorld)
 			cpyWorld = copySlice(oWorld)
 		}
 	}

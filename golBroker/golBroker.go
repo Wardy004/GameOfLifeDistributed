@@ -61,7 +61,7 @@ func runWorker(WorkerSocket,BottomSocket string,section [][]uint8,blockLen,turns
 	request := stubsBrokerToWorker.Request{WorldSection:section,ImageHeight:blockLen+2,ImageWidth:len(section[0]) ,Turns: turns,BottomSocketAddress: BottomSocket}
 	err = client.Call(stubsBrokerToWorker.ProcessWorldHandler, request, response)
 	if err != nil {panic(err)}
-	finishedSection <- section
+	finishedSection <- response.ProcessedSection
 }
 
 func (s *GameOfLife) RegisterWorker(req stubsWorkerToBroker.Request, res *stubsWorkerToBroker.Response) (err error) {

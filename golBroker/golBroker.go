@@ -36,7 +36,7 @@ func makeMatrix(height, width int) [][]uint8 {
 }
 
 func printWorld(world [][]uint8) {
-	for y:=0;y<len(world);y++{
+	for y:=1;y<len(world)-1;y++{
 		fmt.Println(world[y])
 	}
 }

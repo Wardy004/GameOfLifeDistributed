@@ -175,8 +175,10 @@ func (s *GameOfLife) ProcessWorld(req stubsBrokerToWorker.Request, res *stubsBro
 			break Quit
 		default:
 			immutableWorld := makeImmutableMatrix(oWorld)
-			cpyWorld = performTurn(immutableWorld, cpyWorld, req.ImageHeight, req.ImageWidth)
-			oWorld = cpyWorld
+			var newData = performTurn(immutableWorld, cpyWorld, req.ImageHeight, req.ImageWidth)
+			fmt.Println("Initial img is", oWorld)
+			fmt.Println("new img is", newData)
+			oWorld = newData
 			Turn++
 			go getBottomHalo(BottomWorker)
 			<-RowExchange

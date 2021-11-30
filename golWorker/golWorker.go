@@ -146,14 +146,11 @@ func (s *GameOfLife) ProcessRowExchange(req stubsWorkerToWorker.RequestRow , res
 }
 
 func (s *GameOfLife) ProcessWorld(req stubsBrokerToWorker.Request, res *stubsBrokerToWorker.Response) (err error) {
-	fmt.Println("I'm a worker about to process a world")
 	Turn = 0
 	Quit = make(chan bool)
 	Pause = make(chan bool)
 	RowExchange = make(chan bool)
-	fmt.Println("ProcessWorld 1")
 	BottomWorker, err := rpc.Dial("tcp",req.BottomSocketAddress)
-	fmt.Println("ProcessWorld 2")
 	oWorld = makeMatrix(req.ImageHeight, req.ImageWidth)
 	cpyWorld := makeMatrix(req.ImageHeight, req.ImageWidth)
 	fmt.Println("section height is: ", req.ImageHeight)
@@ -161,14 +158,15 @@ func (s *GameOfLife) ProcessWorld(req stubsBrokerToWorker.Request, res *stubsBro
 
 	for y := 0; y < req.ImageHeight; y++ {
 		for x := 0; x < req.ImageWidth; x++ {
-			//fmt.Println("ProcessWorld 2.1")
 			oWorld[y][x] = req.WorldSection[y][x]
 			cpyWorld[y][x] = oWorld[y][x]
+			if cpyWorld[y][x] == 255 {
+				fmt.Println("a live cell!")
+			}
 		}
 	}
-	fmt.Println("Number of turns is", req.Turns)
 
-	//Quit:
+	Quit:
 	for Turn < req.Turns {
 		fmt.Println(fmt.Sprintf("Turn: %d",Turn))
 		select {
@@ -176,21 +174,15 @@ func (s *GameOfLife) ProcessWorld(req stubsBrokerToWorker.Request, res *stubsBro
 			<-Pause
 			fmt.Println("Resumed")
 		case <-Quit:
-			//break Quit
+			break Quit
 		default:
-			fmt.Println("ProcessWorld 3")
 			immutableWorld := makeImmutableMatrix(oWorld)
-			fmt.Println("ProcessWorld 4")
 			performTurn(immutableWorld, cpyWorld, req.ImageHeight, req.ImageWidth)
-			fmt.Println("ProcessWorld 5")
 			oWorld = cpyWorld
 			Turn++
-			fmt.Println("ProcessWorld 6")
 			go getBottomHalo(BottomWorker)
-			fmt.Println("ProcessWorld 7")
 			<-RowExchange
 			<-RowExchange
-			fmt.Println("ProcessWorld 8")
 			cpyWorld = copySlice(oWorld)
 		}
 	}
@@ -202,21 +194,14 @@ func main() {
 	mySocketAddress := os.Args[1]
 	broker := os.Args[2]
 	fmt.Println("Server: " + broker)
-	fmt.Println("worker 1")
 	client, err := rpc.Dial("tcp", broker)
-	fmt.Println("worker 2")
 	if err != nil {
 		panic(err)
 	}
-	fmt.Println("worker 3")
 	defer client.Close()
-	fmt.Println("worker 4")
 	response := new(stubsWorkerToBroker.Response)
-	fmt.Println("worker 5")
 	request := stubsWorkerToBroker.Request{SocketAddress: mySocketAddress}
-	fmt.Println("worker 6")
 	err = client.Call(stubsWorkerToBroker.HandleWorker, request, response)
-	fmt.Println("worker 7")
 	if err != nil {
 		panic(err)
 	}
@@ -224,9 +209,7 @@ func main() {
 	pAddr := flag.String("port", "8030", "Port to listen on")
 	flag.Parse()
 	rand.Seed(time.Now().UnixNano())
-	fmt.Println("worker 8")
 	rpc.Register(&GameOfLife{})
-	fmt.Println("worker 9")
 	listener, _ := net.Listen("tcp", ":"+*pAddr)
 	defer listener.Close()
 	go rpc.Accept(listener)

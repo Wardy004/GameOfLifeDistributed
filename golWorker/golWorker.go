@@ -92,8 +92,8 @@ func performTurn(world func(y, x int) uint8, newWorld [][]uint8, imageHeight, im
 }
 
 func getBottomHalo(BottomWorker *rpc.Client) {
-	request := stubsWorkerToWorker.RequestRow{Turn: Turn,Row: oWorld[len(oWorld)-1]} //pass bottom row to bottom worker
-	fmt.Println("lower halo given ",oWorld[len(oWorld)-1])
+	request := stubsWorkerToWorker.RequestRow{Turn: Turn,Row: oWorld[len(oWorld)-2]} //pass bottom row to bottom worker
+	fmt.Println("lower halo given ",oWorld[len(oWorld)-2])
 	response := new(stubsWorkerToWorker.ResponseRow)
 	BottomWorker.Call(stubsWorkerToWorker.ProcessRowExchange,request,response) //get bottom row from bottom worker
 	fmt.Println("lower halo received: ", response.Row )

@@ -192,7 +192,7 @@ func (s *GameOfLife) ProcessWorld(req stubsBrokerToWorker.Request, res *stubsBro
 			processedData[y-1][x] = oWorld[y][x]
 		}
 	}
-	res.ProcessedSection = processedData
+	res.ProcessedSection = oWorld
 	return
 }
 

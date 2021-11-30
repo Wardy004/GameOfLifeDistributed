@@ -58,8 +58,8 @@ func runWorker(WorkerSocket,BottomSocket string,section [][]uint8,blockLen,turns
 	//ImageHeight passed includes the halos
 
 	// CHECKING SECTION HAS 255 VALUES IN IT
-	for y := 0; y < len(section[0]); y++ {
-		for x := 0; x < len(section[0]); x++ {
+	for y := 0; y < 16; y++ {
+		for x := 0; x < 16; x++ {
 			if section[y][x] == 255{
 				fmt.Println("Broker found a 1 to give to worker!")
 			}

@@ -106,7 +106,7 @@ func (s *GameOfLife) ProcessWorld(req stubsClientToBroker.Request, res *stubsCli
 	ImageWidth = req.ImageWidth
 	workers := len(workerAddresses)
 	blockLen := int(math.Floor(float64(req.ImageHeight) / float64(workers)))
-	workerDone := make([]chan [][]uint8, workers)
+	outChannels := make([]chan [][]uint8, 0)
 	fmt.Println("broker processWorld 2")
 
 	if workers > 0 && workers <= req.ImageHeight  {
@@ -115,7 +115,8 @@ func (s *GameOfLife) ProcessWorld(req stubsClientToBroker.Request, res *stubsCli
 			fmt.Println("broker processWorld 4")
 			BottomSocket := workerAddresses[(blockCount+workers+1)%workers]
 			worldSection := makeWorkerSlice(req.WorldSection,blockLen,blockCount)
-			go runWorker(workerAddresses[blockCount],BottomSocket,worldSection,blockLen,req.Turns,workerDone[blockCount])
+			outChannels = append(outChannels, make(chan [][]uint8))
+			go runWorker(workerAddresses[blockCount],BottomSocket,worldSection,blockLen,req.Turns,outChannels[blockCount])
 			blockCount++
 			if blockCount == workers-1 && req.ImageHeight-(yPos+blockLen) > blockLen {break}
 		}
@@ -123,16 +124,25 @@ func (s *GameOfLife) ProcessWorld(req stubsClientToBroker.Request, res *stubsCli
 		if blockCount != workers {
 			BottomSocket := workerAddresses[0]
 			worldSection := makeWorkerSlice(req.WorldSection,blockLen,blockCount)
-			go runWorker(workerAddresses[blockCount],BottomSocket,worldSection,blockLen,req.Turns,workerDone[blockCount])
+			outChannels = append(outChannels, make(chan [][]uint8))
+			go runWorker(workerAddresses[blockCount],BottomSocket,worldSection,blockLen,req.Turns,outChannels[blockCount])
 			blockCount++
 		}
 		fmt.Println("broker processWorld 6")
-		finishedWorld := makeMatrix(req.ImageHeight,req.ImageWidth)
+		//finishedWorld := makeMatrix(req.ImageHeight,req.ImageWidth)
 		fmt.Println("number of workers is", workers)
-		for x:=0;x<workers;x++{
+
+		finishedWorld := make([][]uint8, 0)
+		for block := 0; block < 2; block++ {
+			finishedWorld = append(finishedWorld, <-outChannels[block]...)
+		}
+
+		/*for x:=0;x<workers;x++{
 			finishedWorld = append(finishedWorld,<-workerDone[x]...)
 			fmt.Println("got work back from worker")
 		}
+
+		 */
 		res.ProcessedWorld = finishedWorld
 		fmt.Println("broker processWorld 7")
 	} else {panic("No workers available")}

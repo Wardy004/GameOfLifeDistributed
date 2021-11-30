@@ -93,11 +93,11 @@ func performTurn(world func(y, x int) uint8, newWorld [][]uint8, imageHeight, im
 
 func getBottomHalo(BottomWorker *rpc.Client) {
 	request := stubsWorkerToWorker.RequestRow{Turn: Turn,Row: oWorld[len(oWorld)-1]} //pass bottom row to bottom worker
-	println("lower halo given ",oWorld[len(oWorld)-1])
+	fmt.Println("lower halo given ",oWorld[len(oWorld)-1])
 	response := new(stubsWorkerToWorker.ResponseRow)
 	BottomWorker.Call(stubsWorkerToWorker.ProcessRowExchange,request,response) //get bottom row from bottom worker
-	println("lower halo received: ", response.Row )
-	println()
+	fmt.Println("lower halo received: ", response.Row )
+	fmt.Println()
 	oWorld[len(oWorld)-1] = response.Row
 	RowExchange<-true
 }
@@ -139,11 +139,11 @@ func (s *GameOfLife) ProcessAliveCellsCount(req stubsBrokerToWorker.RequestAlive
 func (s *GameOfLife) ProcessRowExchange(req stubsWorkerToWorker.RequestRow , res *stubsWorkerToWorker.ResponseRow) (err error) {
 	for {
 		if req.Turn == Turn {
-			println("upper halo received: ", req.Row )
+			fmt.Println("upper halo received: ", req.Row )
 			oWorld[0] = req.Row
 			res.Row = oWorld[1]
-			println("upper halo given: ", oWorld[1] )
-			println()
+			fmt.Println("upper halo given: ", oWorld[1] )
+			fmt.Println()
 			break
 		}
 	}

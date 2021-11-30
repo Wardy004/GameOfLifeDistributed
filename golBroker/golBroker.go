@@ -46,8 +46,8 @@ func makeWorkerSlice(world [][]uint8, blockLen,blockNo int) [][]uint8 {
 	for x:=blockLen*blockNo;x<blockNo*blockLen+blockLen+2;x++{
 		worldSection[x-blockLen*blockNo] = world[(x-1+ImageHeight) % ImageHeight]
 	}
-	fmt.Println("Worker slice: ")
-	printWorld(worldSection)
+	//fmt.Println("Worker slice: ")
+	//printWorld(worldSection)
 	return worldSection
 }
 
@@ -92,6 +92,7 @@ func (s *GameOfLife) ProcessAliveCellsCount(req stubsClientToBroker.RequestAlive
 		worker.client.Call(stubsBrokerToWorker.ProcessTimerEventsHandler,request,response)
 		totalAliveCells += response.AliveCellsCount
 	}
+	fmt.Println("alive cells is", totalAliveCells)
 	res.AliveCellsCount = totalAliveCells
 	return
 }
@@ -105,7 +106,7 @@ func (s *GameOfLife) ProcessWorld(req stubsClientToBroker.Request, res *stubsCli
 	outChannels := make([]chan [][]uint8, 0)
 
 	if workers > 0 && workers <= req.ImageHeight  {
-		printWorld(req.WorldSection)
+		//printWorld(req.WorldSection)
 		for yPos := 0; yPos <= req.ImageHeight-blockLen; yPos += blockLen {
 			BottomSocket := workerAddresses[(blockCount+workers+1)%workers]
 			worldSection := makeWorkerSlice(req.WorldSection,blockLen,blockCount)

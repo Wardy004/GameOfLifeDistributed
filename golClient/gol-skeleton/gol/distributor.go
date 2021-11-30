@@ -88,6 +88,7 @@ func getLiveCells(p Params, oWorld [][]uint8) []util.Cell {
 			}
 		}
 	}
+	fmt.Println("live cells is", liveCells)
 	return liveCells
 }
 

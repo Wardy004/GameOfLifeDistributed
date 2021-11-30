@@ -51,19 +51,23 @@ func makeWorkerSlice(world [][]uint8, blockLen,blockNo int) [][]uint8 {
 func runWorker(WorkerSocket,BottomSocket string,section [][]uint8,blockLen,turns int, finishedSection chan<- [][]uint8) {
 	fmt.Println("Worker: " + WorkerSocket)
 	client, err := rpc.Dial("tcp", WorkerSocket)
-	fmt.Println("runWorker 1")
 	workers = append(workers, worker{client: client,ImageHeight:blockLen+2,ImageWidth: len(section[0])})
-	fmt.Println("runWorker 2")
 	if err != nil {panic(err)}
 	defer client.Close()
-	fmt.Println("runWorker 3")
 	response := new(stubsBrokerToWorker.Response)
-	fmt.Println("runWorker 4")
 	//ImageHeight passed includes the halos
+
+	// CHECKING SECTION HAS 255 VALUES IN IT
+	for y := 0; y < len(section[0]); y++ {
+		for x := 0; x < len(section[0]); x++ {
+			if section[y][x] == 255{
+				fmt.Println("Broker found a 1 to give to worker!")
+			}
+		}
+	}
+
 	request := stubsBrokerToWorker.Request{WorldSection:section,ImageHeight:blockLen+2,ImageWidth:len(section[0]) ,Turns: turns,BottomSocketAddress: BottomSocket}
-	fmt.Println("runWorker 5")
 	err = client.Call(stubsBrokerToWorker.ProcessWorldHandler, request, response)
-	fmt.Println("runWorker 6")
 	if err != nil {panic(err)}
 	finishedSection <- section
 }

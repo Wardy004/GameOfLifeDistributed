@@ -169,6 +169,11 @@ func (s *GameOfLife) ProcessWorld(req stubsBrokerToWorker.Request, res *stubsBro
 			<-RowExchange
 			<-RowExchange
 			cpyWorld = makeMatrix(req.ImageHeight, req.ImageWidth)
+			for y := 0; y < req.ImageWidth; y++ {
+				for x := 0; x < req.ImageHeight; x++ {
+					cpyWorld[y][x] = oWorld[y][x]
+				}
+			}
 		}
 	}
 

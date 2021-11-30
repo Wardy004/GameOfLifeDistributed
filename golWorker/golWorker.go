@@ -123,6 +123,7 @@ func (s *GameOfLife) ProcessKeyPresses(req stubsKeyPresses.RequestFromKeyPress, 
 
 func (s *GameOfLife) ProcessAliveCellsCount(req stubsBrokerToWorker.RequestAliveCellsCount , res *stubsBrokerToWorker.ResponseToAliveCellsCount) (err error) {
 	aliveCells := 0
+	res.Turn = Turn
 	for y := 1; y < req.ImageHeight-1; y++ { //Halo regions avoided
 		for x := 0; x < req.ImageWidth; x++ {
 			if oWorld[y][x] == 255 {
@@ -132,7 +133,6 @@ func (s *GameOfLife) ProcessAliveCellsCount(req stubsBrokerToWorker.RequestAlive
 	}
 	fmt.Println("alive cells is", aliveCells, "at turn", Turn)
 	res.AliveCellsCount = aliveCells
-	res.Turn = Turn
 	return
 }
 
@@ -187,8 +187,8 @@ func (s *GameOfLife) ProcessWorld(req stubsBrokerToWorker.Request, res *stubsBro
 		default:
 			immutableWorld := makeImmutableMatrix(oWorld)
 			performTurn(immutableWorld, cpyWorld, req.ImageHeight, req.ImageWidth)
-			oWorld = cpyWorld
 			Turn++
+			oWorld = cpyWorld
 			//printWorld(oWorld)
 			go getBottomHalo(BottomWorker)
 			<-RowExchange

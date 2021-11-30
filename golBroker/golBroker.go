@@ -91,6 +91,7 @@ func (s *GameOfLife) ProcessAliveCellsCount(req stubsClientToBroker.RequestAlive
 		request := stubsBrokerToWorker.RequestAliveCellsCount{ImageHeight:worker.ImageHeight, ImageWidth:worker.ImageWidth}
 		worker.client.Call(stubsBrokerToWorker.ProcessTimerEventsHandler,request,response)
 		totalAliveCells += response.AliveCellsCount
+		res.Turn = response.Turn
 	}
 	fmt.Println("alive cells is", totalAliveCells)
 	res.AliveCellsCount = totalAliveCells

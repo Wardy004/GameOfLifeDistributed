@@ -38,6 +38,18 @@ func makeImmutableMatrix(matrix [][]uint8) func(y, x int) uint8 {
 	}
 }
 
+func copySlice(original [][]uint8) [][]uint8 {
+	height := len(original)
+	width := len(original[0])
+	sliceCopy := makeMatrix(height, width)
+	for y := 0; y < height; y++ {
+		for x := 0; x < width; x++ {
+			sliceCopy[y][x] = original[y][x]
+		}
+	}
+	return sliceCopy
+}
+
 func performTurn(world func(y, x int) uint8, newWorld [][]uint8, imageHeight, imageWidth int){
 
 	for y := 1; y < imageHeight-1; y++ { //from 1 to <= to account for padding
@@ -168,12 +180,7 @@ func (s *GameOfLife) ProcessWorld(req stubsBrokerToWorker.Request, res *stubsBro
 			go getBottomHalo(BottomWorker)
 			<-RowExchange
 			<-RowExchange
-			cpyWorld = makeMatrix(req.ImageHeight, req.ImageWidth)
-			for y := 0; y < req.ImageWidth; y++ {
-				for x := 0; x < req.ImageHeight; x++ {
-					cpyWorld[y][x] = oWorld[y][x]
-				}
-			}
+			cpyWorld = copySlice(oWorld)
 		}
 	}
 

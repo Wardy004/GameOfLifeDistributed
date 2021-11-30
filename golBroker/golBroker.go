@@ -36,7 +36,7 @@ func makeMatrix(height, width int) [][]uint8 {
 }
 
 func makeWorkerSlice(world [][]uint8, blockLen,blockNo int) [][]uint8 {
-	worldSection := makeMatrix(blockLen+2, ImageWidth)
+	worldSection := make([][]uint8, 0)
 	//top halo
 	worldSection = append(worldSection,world[((blockNo*blockLen)-1+ImageHeight) % ImageHeight])
 	//main section to be modified

@@ -160,10 +160,6 @@ func (s *GameOfLife) ProcessWorld(req stubsBrokerToWorker.Request, res *stubsBro
 		for x := 0; x < req.ImageWidth; x++ {
 			oWorld[y][x] = req.WorldSection[y][x]
 			cpyWorld[y][x] = oWorld[y][x]
-			if req.WorldSection[y][x] == 255{
-			}
-			if cpyWorld[y][x] == 255 {
-			}
 		}
 	}
 

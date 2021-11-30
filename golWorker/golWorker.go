@@ -52,7 +52,7 @@ func copySlice(original [][]uint8) [][]uint8 {
 
 func performTurn(world func(y, x int) uint8, newWorld [][]uint8, imageHeight, imageWidth int){
 
-	for y := 1; y < imageHeight-1; y++ { //from 1 to <= to account for padding
+	for y := 1; y < imageHeight-2; y++ { //from 1 to <= to account for padding
 		for x := 0; x < imageWidth; x++ {
 
 			aliveCells := 0

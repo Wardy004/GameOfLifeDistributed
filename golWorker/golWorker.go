@@ -184,14 +184,8 @@ func (s *GameOfLife) ProcessWorld(req stubsBrokerToWorker.Request, res *stubsBro
 		}
 	}
 
-	// Return only data without halo
-	processedData := makeMatrix(req.ImageHeight-2, req.ImageWidth)
-	for y := 0; y < req.ImageHeight-1; y++ {
-		for x := 0; x < req.ImageWidth; x++ {
-			processedData[y][x] = oWorld[y][x]
-		}
-	}
-	res.ProcessedSection = processedData
+	// Return section without halos
+	res.ProcessedSection = oWorld[1:req.ImageHeight-1]
 	return
 }
 

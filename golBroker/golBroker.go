@@ -123,7 +123,6 @@ func (s *GameOfLife) ProcessWorld(req stubsClientToBroker.Request, res *stubsCli
 	return
 }
 
-
 func main() {
 	pAddr := flag.String("port", "8030", "Port to listen on")
 	flag.Parse()

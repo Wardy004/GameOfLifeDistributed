@@ -37,14 +37,9 @@ func makeMatrix(height, width int) [][]uint8 {
 
 func makeWorkerSlice(world [][]uint8, blockLen,blockNo int) [][]uint8 {
 	worldSection := makeMatrix(blockLen+2, ImageWidth)
-	//top halo
-	worldSection = append(worldSection,world[((blockNo*blockLen)-1+ImageHeight) % ImageHeight])
-	//main section to be modified
-	for x:=blockNo*blockLen;x<blockLen;x++{
-		worldSection = append(worldSection,world[x])
+	for x:=blockLen*blockNo;x<blockNo*blockLen+blockLen+2;x++{
+		worldSection[x-blockLen*blockNo] = world[((blockNo*blockLen)-1+ImageHeight) % ImageHeight]
 	}
-	//bottom halo
-	worldSection = append(worldSection,world[((blockNo*(blockLen+1))+ImageHeight) % ImageHeight])
 	return worldSection
 }
 
@@ -57,9 +52,9 @@ func runWorker(WorkerSocket,BottomSocket string,section [][]uint8,blockLen,turns
 	response := new(stubsBrokerToWorker.Response)
 	//ImageHeight passed includes the halos
 	request := stubsBrokerToWorker.Request{WorldSection:section,ImageHeight:blockLen+2,ImageWidth:len(section[0]) ,Turns: turns,BottomSocketAddress: BottomSocket}
-	err = client.Call(stubsWorkerToBroker.HandleWorker, request, response)
+	err = client.Call(stubsBrokerToWorker.ProcessWorldHandler, request, response)
 	if err != nil {panic(err)}
-	finishedSection <- section
+	finishedSection <- response.ProcessedSection
 }
 
 func (s *GameOfLife) RegisterWorker(req stubsWorkerToBroker.Request, res *stubsWorkerToBroker.Response) (err error) {
@@ -114,12 +109,15 @@ func (s *GameOfLife) ProcessWorld(req stubsClientToBroker.Request, res *stubsCli
 			go runWorker(workerAddresses[blockCount],BottomSocket,worldSection,blockLen,req.Turns,workerDone[blockCount])
 			blockCount++
 		}
-		finishedWorld := makeMatrix(req.ImageHeight,req.ImageWidth)
+		var finishedWorld [][]uint8
 		for x:=0;x<workers;x++{
 			finishedWorld = append(finishedWorld,<-workerDone[x]...)
 		}
 		res.ProcessedWorld = finishedWorld
-	} else {panic("No workers available")}
+	} else {
+		res.ProcessedWorld = req.WorldSection
+		panic("No workers available")
+	}
 
 	return
 }

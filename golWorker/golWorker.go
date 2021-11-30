@@ -52,7 +52,7 @@ func copySlice(original [][]uint8) [][]uint8 {
 
 func performTurn(world func(y, x int) uint8, newWorld [][]uint8, imageHeight, imageWidth int){
 
-	for y := 1; y < imageHeight-2; y++ { //from 1 to <= to account for padding
+	for y := 1; y < imageHeight-1; y++ { //from 1 to <= to account for padding
 		for x := 0; x < imageWidth; x++ {
 
 			aliveCells := 0
@@ -138,10 +138,10 @@ func (s *GameOfLife) ProcessAliveCellsCount(req stubsBrokerToWorker.RequestAlive
 func (s *GameOfLife) ProcessRowExchange(req stubsWorkerToWorker.RequestRow , res *stubsWorkerToWorker.ResponseRow) (err error) {
 	for {
 		if req.Turn == Turn {
-			fmt.Println("upper halo received: ", req.Row )
+			//fmt.Println("upper halo received: ", req.Row )
 			oWorld[0] = req.Row
 			res.Row = oWorld[1]
-			fmt.Println("upper halo given: ", oWorld[1] )
+			//fmt.Println("upper halo given: ", oWorld[1] )
 			break
 		}
 	}
@@ -155,11 +155,11 @@ func (s *GameOfLife) ProcessWorld(req stubsBrokerToWorker.Request, res *stubsBro
 	Pause = make(chan bool)
 	RowExchange = make(chan bool)
 	BottomWorker, err := rpc.Dial("tcp",req.BottomSocketAddress)
-	fmt.Println("Bottom worker socket address:",req.BottomSocketAddress)
+	//fmt.Println("Bottom worker socket address:",req.BottomSocketAddress)
 	oWorld = makeMatrix(req.ImageHeight, req.ImageWidth)
 	cpyWorld := makeMatrix(req.ImageHeight, req.ImageWidth)
-	fmt.Println("section height is: ", req.ImageHeight)
-	fmt.Println("section width is: ", req.ImageWidth)
+	//fmt.Println("section height is: ", req.ImageHeight)
+	//fmt.Println("section width is: ", req.ImageWidth)
 
 	for y := 0; y < req.ImageHeight; y++ {
 		for x := 0; x < req.ImageWidth; x++ {
@@ -185,6 +185,7 @@ func (s *GameOfLife) ProcessWorld(req stubsBrokerToWorker.Request, res *stubsBro
 			go getBottomHalo(BottomWorker)
 			<-RowExchange
 			<-RowExchange
+			fmt.Println(oWorld)
 			cpyWorld = copySlice(oWorld)
 		}
 	}

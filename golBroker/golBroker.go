@@ -79,9 +79,9 @@ func (s *GameOfLife) ProcessKeyPresses(req stubsKeyPresses.RequestFromKeyPress, 
 func (s *GameOfLife) ProcessAliveCellsCount(req stubsClientToBroker.RequestAliveCellsCount , res *stubsClientToBroker.ResponseToAliveCellsCount) (err error) {
 	totalAliveCells := 0
 	for _,worker := range workers {
-		response := new(stubsClientToBroker.ResponseToAliveCellsCount)
-		request := stubsClientToBroker.RequestAliveCellsCount{ImageHeight:worker.ImageHeight, ImageWidth:worker.ImageWidth}
-		worker.client.Call(stubsClientToBroker.ProcessTimerEventsHandler,request,response)
+		response := new(stubsBrokerToWorker.ResponseToAliveCellsCount)
+		request := stubsBrokerToWorker.RequestAliveCellsCount{ImageHeight:worker.ImageHeight, ImageWidth:worker.ImageWidth}
+		worker.client.Call(stubsBrokerToWorker.ProcessTimerEventsHandler,request,response)
 		totalAliveCells += response.AliveCellsCount
 	}
 	res.AliveCellsCount = totalAliveCells

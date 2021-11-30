@@ -188,10 +188,10 @@ func (s *GameOfLife) ProcessWorld(req stubsBrokerToWorker.Request, res *stubsBro
 			performTurn(immutableWorld, cpyWorld, req.ImageHeight, req.ImageWidth)
 			oWorld = cpyWorld
 			Turn++
+			printWorld(oWorld)
 			go getBottomHalo(BottomWorker)
 			<-RowExchange
 			<-RowExchange
-			printWorld(oWorld)
 			cpyWorld = copySlice(oWorld)
 		}
 	}

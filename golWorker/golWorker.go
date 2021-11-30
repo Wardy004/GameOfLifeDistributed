@@ -138,10 +138,10 @@ func (s *GameOfLife) ProcessAliveCellsCount(req stubsBrokerToWorker.RequestAlive
 func (s *GameOfLife) ProcessRowExchange(req stubsWorkerToWorker.RequestRow , res *stubsWorkerToWorker.ResponseRow) (err error) {
 	for {
 		if req.Turn == Turn {
-			//fmt.Println("upper halo received: ", req.Row )
+			fmt.Println("upper halo received: ", req.Row )
 			oWorld[0] = req.Row
 			res.Row = oWorld[1]
-			//fmt.Println("upper halo given: ", oWorld[1] )
+			fmt.Println("upper halo given: ", oWorld[1] )
 			break
 		}
 	}
@@ -150,7 +150,7 @@ func (s *GameOfLife) ProcessRowExchange(req stubsWorkerToWorker.RequestRow , res
 }
 
 func printWorld(world [][]uint8) {
-	for y:=0;y<len(world);y++{
+	for y:=1;y<len(world)-1;y++{
 		fmt.Println(world[y])
 	}
 }

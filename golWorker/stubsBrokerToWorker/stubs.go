@@ -12,7 +12,6 @@ type Request struct {
 	ImageHeight  int
 	ImageWidth   int
 	Turns        int
-	TopSocketAddress string
 	BottomSocketAddress string
 }
 

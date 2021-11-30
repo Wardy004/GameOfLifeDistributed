@@ -97,7 +97,6 @@ func getBottomHalo(BottomWorker *rpc.Client) {
 	response := new(stubsWorkerToWorker.ResponseRow)
 	BottomWorker.Call(stubsWorkerToWorker.ProcessRowExchange,request,response) //get bottom row from bottom worker
 	fmt.Println("lower halo received: ", response.Row )
-	fmt.Println()
 	oWorld[len(oWorld)-1] = response.Row
 	RowExchange<-true
 }
@@ -143,7 +142,6 @@ func (s *GameOfLife) ProcessRowExchange(req stubsWorkerToWorker.RequestRow , res
 			oWorld[0] = req.Row
 			res.Row = oWorld[1]
 			fmt.Println("upper halo given: ", oWorld[1] )
-			fmt.Println()
 			break
 		}
 	}
@@ -157,6 +155,7 @@ func (s *GameOfLife) ProcessWorld(req stubsBrokerToWorker.Request, res *stubsBro
 	Pause = make(chan bool)
 	RowExchange = make(chan bool)
 	BottomWorker, err := rpc.Dial("tcp",req.BottomSocketAddress)
+	fmt.Println("Bottom worker socket address:",req.BottomSocketAddress)
 	oWorld = makeMatrix(req.ImageHeight, req.ImageWidth)
 	cpyWorld := makeMatrix(req.ImageHeight, req.ImageWidth)
 	fmt.Println("section height is: ", req.ImageHeight)

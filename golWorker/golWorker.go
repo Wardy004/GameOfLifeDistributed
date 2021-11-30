@@ -161,10 +161,8 @@ func (s *GameOfLife) ProcessWorld(req stubsBrokerToWorker.Request, res *stubsBro
 			oWorld[y][x] = req.WorldSection[y][x]
 			cpyWorld[y][x] = oWorld[y][x]
 			if req.WorldSection[y][x] == 255{
-				fmt.Println("a live cell in the request!")
 			}
 			if cpyWorld[y][x] == 255 {
-				fmt.Println("a live cell!")
 			}
 		}
 	}

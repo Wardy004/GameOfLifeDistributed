@@ -42,10 +42,12 @@ func makeWorkerSlice(world [][]uint8, blockLen,blockNo int) [][]uint8 {
 
 	for y := 0; y < blockLen+2; y++ {
 		for x := 0; x < ImageWidth; x++{
+			// Top halo
+			if y == blockNo*blockLen-1 {worldSection[y][x] = world[((blockNo*blockLen)-1+ImageHeight) % ImageHeight][x]}
 			// Main section
-			if y > blockNo*blockLen-1 && y < blockNo*blockLen+blockLen+1{
-				worldSection[y][x] = world[y][x]
-			}
+			if y > blockNo*blockLen && y < blockNo*blockLen+blockLen {worldSection[y][x] = world[y][x]}
+			// Bottom halo
+			if y == blockNo*blockLen+1 {worldSection[y][x] = world[((blockNo*blockLen)+1+ImageHeight) % ImageHeight][x]}
 		}
 	}
 
@@ -62,16 +64,6 @@ func runWorker(WorkerSocket,BottomSocket string,section [][]uint8,blockLen,turns
 	defer client.Close()
 	response := new(stubsBrokerToWorker.Response)
 	//ImageHeight passed includes the halos
-
-	// CHECKING SECTION HAS 255 VALUES IN IT
-	for y := 0; y < blockLen+2; y++ {
-		for x := 0; x < len(section[0]); x++ {
-			if section[y][x] == 255{
-				fmt.Println("Broker found a 1 to give to worker!")
-			}
-		}
-	}
-
 	request := stubsBrokerToWorker.Request{WorldSection:section,ImageHeight:blockLen+2,ImageWidth:len(section[0]) ,Turns: turns,BottomSocketAddress: BottomSocket}
 	err = client.Call(stubsBrokerToWorker.ProcessWorldHandler, request, response)
 	if err != nil {panic(err)}

@@ -35,18 +35,26 @@ func makeMatrix(height, width int) [][]uint8 {
 	return matrix
 }
 
+func printWorld(world [][]uint8) {
+	for y:=0;y<len(world);y++{
+		fmt.Println(world[y])
+	}
+}
+
 func makeWorkerSlice(world [][]uint8, blockLen,blockNo int) [][]uint8 {
 	worldSection := makeMatrix(blockLen+2, ImageWidth)
 	for x:=blockLen*blockNo;x<blockNo*blockLen+blockLen+2;x++{
 		worldSection[x-blockLen*blockNo] = world[(x-1+ImageHeight) % ImageHeight]
 	}
+	fmt.Println("Worker slice: ")
+	printWorld(worldSection)
 	return worldSection
 }
 
 func runWorker(WorkerSocket,BottomSocket string,section [][]uint8,blockLen,turns int, finishedSection chan<- [][]uint8) {
 	fmt.Println("Worker: " + WorkerSocket)
 	client, err := rpc.Dial("tcp", WorkerSocket)
-	workers = append(workers, worker{client: client,ImageHeight:blockLen+2,ImageWidth: len(section[0])})
+	workers = append(workers,worker{client: client,ImageHeight:blockLen+2,ImageWidth:len(section[0])})
 	if err != nil {panic(err)}
 	defer client.Close()
 	response := new(stubsBrokerToWorker.Response)
@@ -97,6 +105,7 @@ func (s *GameOfLife) ProcessWorld(req stubsClientToBroker.Request, res *stubsCli
 	outChannels := make([]chan [][]uint8, 0)
 
 	if workers > 0 && workers <= req.ImageHeight  {
+		printWorld(req.WorldSection)
 		for yPos := 0; yPos <= req.ImageHeight-blockLen; yPos += blockLen {
 			BottomSocket := workerAddresses[(blockCount+workers+1)%workers]
 			worldSection := makeWorkerSlice(req.WorldSection,blockLen,blockCount)

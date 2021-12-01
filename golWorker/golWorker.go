@@ -19,7 +19,6 @@ var Turn int
 var Pause chan bool
 var Quit chan bool
 var RowExchange chan bool
-var finishedLiveCells chan bool
 var Shutdown bool
 var liveCellsCount = liveCells{}
 type liveCells struct {
@@ -139,10 +138,11 @@ func countCells(req stubsBrokerToWorker.Request) int{
 }
 
 func (s *GameOfLife) ProcessAliveCellsCount(req stubsBrokerToWorker.RequestAliveCellsCount , res *stubsBrokerToWorker.ResponseToAliveCellsCount) (err error) {
+	<-RowExchange
+	<-RowExchange
 	fmt.Println("alive cells is", liveCellsCount.AliveCellsCount, "at turn", liveCellsCount.Turn)
 	res.Turn = liveCellsCount.Turn
 	res.AliveCellsCount = liveCellsCount.AliveCellsCount
-	finishedLiveCells<-true
 	return
 }
 
@@ -171,7 +171,6 @@ func (s *GameOfLife) ProcessWorld(req stubsBrokerToWorker.Request, res *stubsBro
 	Quit = make(chan bool)
 	Pause = make(chan bool)
 	RowExchange = make(chan bool)
-	finishedLiveCells = make(chan bool)
 	BottomWorker, err := rpc.Dial("tcp",req.BottomSocketAddress)
 	//fmt.Println("Bottom worker socket address:",req.BottomSocketAddress)
 	oWorld = makeMatrix(req.ImageHeight, req.ImageWidth)
@@ -202,13 +201,10 @@ func (s *GameOfLife) ProcessWorld(req stubsBrokerToWorker.Request, res *stubsBro
 			oWorld = cpyWorld
 			//printWorld(oWorld)
 			go getBottomHalo(BottomWorker)
-			// Workers are synchronised here, so update aliveCellsCount
 			<-RowExchange
 			<-RowExchange
 			liveCellsCount.AliveCellsCount = countCells(req)
 			liveCellsCount.Turn = Turn
-			<-finishedLiveCells
-			<-finishedLiveCells
 			cpyWorld = copySlice(oWorld)
 		}
 	}

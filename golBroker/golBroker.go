@@ -79,6 +79,7 @@ func (s *GameOfLife) ProcessKeyPresses(req stubsKeyPresses.RequestFromKeyPress, 
 func (s *GameOfLife) ProcessAliveCellsCount(req stubsClientToBroker.RequestAliveCellsCount , res *stubsClientToBroker.ResponseToAliveCellsCount) (err error) {
 	totalAliveCells := 0
 	turnA := 0
+	turnB := 0
 	for i,worker := range workers {
 		response := new(stubsBrokerToWorker.ResponseToAliveCellsCount)
 		request := stubsBrokerToWorker.RequestAliveCellsCount{ImageHeight:worker.ImageHeight, ImageWidth:worker.ImageWidth}
@@ -88,8 +89,11 @@ func (s *GameOfLife) ProcessAliveCellsCount(req stubsClientToBroker.RequestAlive
 		worker.client.Call(stubsBrokerToWorker.ProcessTimerEventsHandler,request,response)
 		totalAliveCells += response.AliveCellsCount
 		if i == 0 { turnA = response.Turn}
+		if i == 1 { turnB = response.Turn}
 	}
+	if turnA != turnB {fmt.Println("mismatched turns")}
 	res.Turn = turnA
+	fmt.Println("alive cells is", totalAliveCells, "at turn", res.Turn)
 	res.AliveCellsCount = totalAliveCells
 	return
 }

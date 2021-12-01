@@ -106,7 +106,7 @@ func (s *GameOfLife) ProcessKeyPresses(req stubsKeyPresses.RequestFromKeyPress, 
 		case "p":
 			res.Turn = Turn
 			Pause<-true
-			fmt.Println(fmt.Sprintf("Puased on Turn: %d",Turn))
+			fmt.Println(fmt.Sprintf("Paused on Turn: %d",Turn))
 		case "q":
 			fmt.Println("q pressed")
 			Quit<-true
@@ -122,8 +122,8 @@ func (s *GameOfLife) ProcessKeyPresses(req stubsKeyPresses.RequestFromKeyPress, 
 }
 
 func (s *GameOfLife) ProcessAliveCellsCount(req stubsBrokerToWorker.RequestAliveCellsCount , res *stubsBrokerToWorker.ResponseToAliveCellsCount) (err error) {
+	Pause <- true
 	aliveCells := 0
-	res.Turn = Turn
 	for y := 1; y < req.ImageHeight-1; y++ { //Halo regions avoided
 		for x := 0; x < req.ImageWidth; x++ {
 			if oWorld[y][x] == 255 {
@@ -132,7 +132,9 @@ func (s *GameOfLife) ProcessAliveCellsCount(req stubsBrokerToWorker.RequestAlive
 		}
 	}
 	fmt.Println("alive cells is", aliveCells, "at turn", Turn)
+	res.Turn = Turn
 	res.AliveCellsCount = aliveCells
+	Pause <- true
 	return
 }
 

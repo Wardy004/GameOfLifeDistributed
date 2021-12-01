@@ -93,10 +93,8 @@ func performTurn(world func(y, x int) uint8, newWorld [][]uint8, imageHeight, im
 
 func getBottomHalo(BottomWorker *rpc.Client) {
 	request := stubsWorkerToWorker.RequestRow{Turn: Turn,Row: oWorld[len(oWorld)-2]} //pass bottom row to bottom worker
-	//fmt.Println("lower halo given ",oWorld[len(oWorld)-2])
 	response := new(stubsWorkerToWorker.ResponseRow)
 	BottomWorker.Call(stubsWorkerToWorker.ProcessRowExchange,request,response) //get bottom row from bottom worker
-	//fmt.Println("lower halo received: ", response.Row )
 	oWorld[len(oWorld)-1] = response.Row
 	RowExchange<-true
 }
@@ -144,13 +142,10 @@ func (s *GameOfLife) ProcessAliveCellsCount(req stubsBrokerToWorker.RequestAlive
 				}
 			}
 		}
-		fmt.Println("alive cells is", aliveCells, "at turn", Turn)
 		res.AliveCellsCount = aliveCells
-	}else{	// Do this if turn is mismatched because worker is a turn ahead
-		fmt.Println("mismatched turn")
+	}else{	// Do this if turn is mismatched because worker has got ahead
 		res.Turn = req.Turn
 		res.AliveCellsCount = liveCellCounts[req.Turn-1]
-		fmt.Println("alive cells is", liveCellCounts[req.Turn-1], "at worker 1's turn", req.Turn)
 	}
 	return
 }
@@ -158,21 +153,13 @@ func (s *GameOfLife) ProcessAliveCellsCount(req stubsBrokerToWorker.RequestAlive
 func (s *GameOfLife) ProcessRowExchange(req stubsWorkerToWorker.RequestRow , res *stubsWorkerToWorker.ResponseRow) (err error) {
 	for {
 		if req.Turn == Turn {
-			//fmt.Println("upper halo received: ", req.Row )
 			oWorld[0] = req.Row
 			res.Row = oWorld[1]
-			//fmt.Println("upper halo given: ", oWorld[1] )
 			break
 		}
 	}
 	RowExchange<-true
 	return
-}
-
-func printWorld(world [][]uint8) {
-	for y:=1;y<len(world)-1;y++{
-		fmt.Println(world[y])
-	}
 }
 
 func (s *GameOfLife) ProcessWorld(req stubsBrokerToWorker.Request, res *stubsBrokerToWorker.Response) (err error) {
@@ -181,11 +168,8 @@ func (s *GameOfLife) ProcessWorld(req stubsBrokerToWorker.Request, res *stubsBro
 	Pause = make(chan bool)
 	RowExchange = make(chan bool)
 	BottomWorker, err := rpc.Dial("tcp",req.BottomSocketAddress)
-	//fmt.Println("Bottom worker socket address:",req.BottomSocketAddress)
 	oWorld = makeMatrix(req.ImageHeight, req.ImageWidth)
 	cpyWorld := makeMatrix(req.ImageHeight, req.ImageWidth)
-	//fmt.Println("section height is: ", req.ImageHeight)
-	//fmt.Println("section width is: ", req.ImageWidth)
 
 	for y := 0; y < req.ImageHeight; y++ {
 		for x := 0; x < req.ImageWidth; x++ {
@@ -208,7 +192,6 @@ func (s *GameOfLife) ProcessWorld(req stubsBrokerToWorker.Request, res *stubsBro
 			performTurn(immutableWorld, cpyWorld, req.ImageHeight, req.ImageWidth)
 			Turn++
 			oWorld = cpyWorld
-			//printWorld(oWorld)
 			go getBottomHalo(BottomWorker)
 			<-RowExchange
 			<-RowExchange

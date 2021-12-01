@@ -35,19 +35,11 @@ func makeMatrix(height, width int) [][]uint8 {
 	return matrix
 }
 
-func printWorld(world [][]uint8) {
-	for y:=1;y<len(world)-1;y++{
-		fmt.Println(world[y])
-	}
-}
-
 func makeWorkerSlice(world [][]uint8, blockLen,blockNo int) [][]uint8 {
 	worldSection := makeMatrix(blockLen+2, ImageWidth)
 	for x:=blockLen*blockNo;x<blockNo*blockLen+blockLen+2;x++{
 		worldSection[x-blockLen*blockNo] = world[(x-1+ImageHeight) % ImageHeight]
 	}
-	//fmt.Println("Worker slice: ")
-	//printWorld(worldSection)
 	return worldSection
 }
 
@@ -87,7 +79,6 @@ func (s *GameOfLife) ProcessKeyPresses(req stubsKeyPresses.RequestFromKeyPress, 
 func (s *GameOfLife) ProcessAliveCellsCount(req stubsClientToBroker.RequestAliveCellsCount , res *stubsClientToBroker.ResponseToAliveCellsCount) (err error) {
 	totalAliveCells := 0
 	turnA := 0
-	turnB := 0
 	for i,worker := range workers {
 		response := new(stubsBrokerToWorker.ResponseToAliveCellsCount)
 		request := stubsBrokerToWorker.RequestAliveCellsCount{ImageHeight:worker.ImageHeight, ImageWidth:worker.ImageWidth}
@@ -97,11 +88,8 @@ func (s *GameOfLife) ProcessAliveCellsCount(req stubsClientToBroker.RequestAlive
 		worker.client.Call(stubsBrokerToWorker.ProcessTimerEventsHandler,request,response)
 		totalAliveCells += response.AliveCellsCount
 		if i == 0 { turnA = response.Turn}
-		if i == 1 { turnB = response.Turn}
 	}
-	if turnA != turnB {fmt.Println("mismatched turns")}
 	res.Turn = turnA
-	fmt.Println("alive cells is", totalAliveCells, "at turn", res.Turn)
 	res.AliveCellsCount = totalAliveCells
 	return
 }
@@ -116,7 +104,6 @@ func (s *GameOfLife) ProcessWorld(req stubsClientToBroker.Request, res *stubsCli
 	interrupt := make(chan bool)
 
 	if workers > 0 && workers <= req.ImageHeight  {
-		//printWorld(req.WorldSection)
 		for yPos := 0; yPos <= req.ImageHeight-blockLen; yPos += blockLen {
 			BottomSocket := workerAddresses[(blockCount+workers+1)%workers]
 			worldSection := makeWorkerSlice(req.WorldSection,blockLen,blockCount)

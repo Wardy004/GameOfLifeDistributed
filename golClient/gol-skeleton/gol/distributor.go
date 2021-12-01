@@ -78,7 +78,6 @@ func processKeyPresses(client *rpc.Client , keyPresses <-chan rune,done <-chan b
 }
 
 func getLiveCells(p Params, oWorld [][]uint8) []util.Cell {
-	fmt.Println("distributor getLiveCells")
 	liveCells := make([]util.Cell, 0)
 	for x := 0; x < p.ImageWidth; x++ {
 		for y := 0; y < p.ImageHeight; y++ {
@@ -88,7 +87,6 @@ func getLiveCells(p Params, oWorld [][]uint8) []util.Cell {
 			}
 		}
 	}
-	fmt.Println("live cells is", liveCells)
 	return liveCells
 }
 

@@ -170,7 +170,7 @@ func (s *GameOfLife) ProcessWorld(req stubsBrokerToWorker.Request, res *stubsBro
 	BottomWorker, err := rpc.Dial("tcp",req.BottomSocketAddress)
 	oWorld = makeMatrix(req.ImageHeight, req.ImageWidth)
 	cpyWorld := makeMatrix(req.ImageHeight, req.ImageWidth)
-
+	fmt.Println("height is", req.ImageHeight)
 	for y := 0; y < req.ImageHeight; y++ {
 		for x := 0; x < req.ImageWidth; x++ {
 			oWorld[y][x] = req.WorldSection[y][x]

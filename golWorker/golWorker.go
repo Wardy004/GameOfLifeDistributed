@@ -140,7 +140,7 @@ func countCells(req stubsBrokerToWorker.Request) int{
 }
 
 func (s *GameOfLife) ProcessAliveCellsCount(req stubsBrokerToWorker.RequestAliveCellsCount , res *stubsBrokerToWorker.ResponseToAliveCellsCount) (err error) {
-	<-Messages
+	Messages<-true
 	fmt.Println("alive cells is", liveCellsCount.AliveCellsCount, "at turn", liveCellsCount.Turn)
 	res.Turn = liveCellsCount.Turn
 	res.AliveCellsCount = liveCellsCount.AliveCellsCount

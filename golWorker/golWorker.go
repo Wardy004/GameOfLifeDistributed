@@ -205,6 +205,7 @@ func (s *GameOfLife) ProcessWorld(req stubsBrokerToWorker.Request, res *stubsBro
 		default:
 			immutableWorld := makeImmutableMatrix(oWorld)
 			performTurn(immutableWorld, cpyWorld, req.ImageHeight, req.ImageWidth)
+			Turn++
 			oWorld = cpyWorld
 			//printWorld(oWorld)
 			go getBottomHalo(BottomWorker)
@@ -214,7 +215,6 @@ func (s *GameOfLife) ProcessWorld(req stubsBrokerToWorker.Request, res *stubsBro
 			liveCellCounts = append(liveCellCounts, countCells(req))
 			fmt.Println("liveCellsCounts are", liveCellCounts)
 			cpyWorld = copySlice(oWorld)
-			Turn++
 		}
 	}
 

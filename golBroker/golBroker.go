@@ -117,6 +117,7 @@ func (s *GameOfLife) ProcessWorld(req stubsClientToBroker.Request, res *stubsCli
 			if blockCount == workers-1 && req.ImageHeight-(yPos+blockLen) > blockLen {break}
 		}
 		if blockCount != workers {
+			fmt.Println("giving bigger slice of length to last worker")
 			BottomSocket := workerAddresses[0]
 			worldSection := makeWorkerSlice(req.WorldSection,blockLen,blockCount)
 			outChannels = append(outChannels, make(chan [][]uint8))

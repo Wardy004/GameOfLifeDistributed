@@ -171,6 +171,7 @@ func (s *GameOfLife) ProcessWorld(req stubsBrokerToWorker.Request, res *stubsBro
 	Quit = make(chan bool)
 	Pause = make(chan bool)
 	RowExchange = make(chan bool)
+	finishedLiveCells = make(chan bool)
 	BottomWorker, err := rpc.Dial("tcp",req.BottomSocketAddress)
 	//fmt.Println("Bottom worker socket address:",req.BottomSocketAddress)
 	oWorld = makeMatrix(req.ImageHeight, req.ImageWidth)

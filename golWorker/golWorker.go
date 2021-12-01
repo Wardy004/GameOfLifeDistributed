@@ -201,11 +201,11 @@ func (s *GameOfLife) ProcessWorld(req stubsBrokerToWorker.Request, res *stubsBro
 			oWorld = cpyWorld
 			//printWorld(oWorld)
 			go getBottomHalo(BottomWorker)
-			<-RowExchange
-			<-RowExchange
 			// Workers are synchronised here, so update aliveCellsCount
 			liveCellsCount.AliveCellsCount = countCells(req)
 			liveCellsCount.Turn = Turn
+			<-RowExchange
+			<-RowExchange
 			cpyWorld = copySlice(oWorld)
 		}
 	}

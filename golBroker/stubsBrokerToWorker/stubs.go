@@ -25,5 +25,4 @@ type ResponseToAliveCellsCount struct {
 type RequestAliveCellsCount struct {
 	ImageHeight int
 	ImageWidth  int
-	Turn int
 }

@@ -20,11 +20,7 @@ var Pause chan bool
 var Quit chan bool
 var RowExchange chan bool
 var Shutdown bool
-var liveCellsCount = liveCells{}
-type liveCells struct {
-	AliveCellsCount int
-	Turn int
-}
+var liveCellCounts []int
 type GameOfLife struct{}
 
 
@@ -138,9 +134,22 @@ func countCells(req stubsBrokerToWorker.Request) int{
 }
 
 func (s *GameOfLife) ProcessAliveCellsCount(req stubsBrokerToWorker.RequestAliveCellsCount , res *stubsBrokerToWorker.ResponseToAliveCellsCount) (err error) {
-	fmt.Println("alive cells is", liveCellsCount.AliveCellsCount, "at turn", liveCellsCount.Turn)
-	res.Turn = liveCellsCount.Turn
-	res.AliveCellsCount = liveCellsCount.AliveCellsCount
+	if req.Turn == 0 {	// means this is the first worker being called
+		aliveCells := 0
+		res.Turn = Turn
+		for y := 1; y < req.ImageHeight-1; y++ { //Halo regions avoided
+			for x := 0; x < req.ImageWidth; x++ {
+				if oWorld[y][x] == 255 {
+					aliveCells++
+				}
+			}
+		}
+		fmt.Println("alive cells is", aliveCells, "at turn", Turn)
+		res.AliveCellsCount = aliveCells
+	}else{
+		res.Turn = req.Turn
+		res.AliveCellsCount = liveCellCounts[req.Turn]
+	}
 	return
 }
 
@@ -201,9 +210,8 @@ func (s *GameOfLife) ProcessWorld(req stubsBrokerToWorker.Request, res *stubsBro
 			go getBottomHalo(BottomWorker)
 			<-RowExchange
 			<-RowExchange
-			// Update liveCellsCount struct at end of turn
-			liveCellsCount.AliveCellsCount = countCells(req)
-			liveCellsCount.Turn = Turn
+			// Update liveCellsCounts at end of turn
+			liveCellCounts = append(liveCellCounts, countCells(req))
 			cpyWorld = copySlice(oWorld)
 		}
 	}

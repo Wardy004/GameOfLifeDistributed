@@ -134,7 +134,7 @@ func countCells(req stubsBrokerToWorker.Request) int{
 }
 
 func (s *GameOfLife) ProcessAliveCellsCount(req stubsBrokerToWorker.RequestAliveCellsCount , res *stubsBrokerToWorker.ResponseToAliveCellsCount) (err error) {
-	if req.Turn == 0 {	// means this is the first worker being called
+	if req.Turn == 0 || req.Turn == Turn{	// Do this if first worker or if other worker on correct turn
 		aliveCells := 0
 		res.Turn = Turn
 		for y := 1; y < req.ImageHeight-1; y++ { //Halo regions avoided
@@ -146,7 +146,7 @@ func (s *GameOfLife) ProcessAliveCellsCount(req stubsBrokerToWorker.RequestAlive
 		}
 		fmt.Println("alive cells is", aliveCells, "at turn", Turn)
 		res.AliveCellsCount = aliveCells
-	}else{
+	}else{	// Do this if turn is mismatched because worker is a turn ahead
 		res.Turn = req.Turn
 		res.AliveCellsCount = liveCellCounts[req.Turn-1]
 		fmt.Println("alive cells is", liveCellCounts[req.Turn-1], "at worker 1's turn", req.Turn)

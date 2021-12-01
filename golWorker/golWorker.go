@@ -208,11 +208,13 @@ func (s *GameOfLife) ProcessWorld(req stubsBrokerToWorker.Request, res *stubsBro
 			<-RowExchange
 			<-RowExchange
 			select {
-			case Messages <- true:
+			case <-Messages:
+				fmt.Println("received message")
 				<-liveCellsBlocker
 				<-liveCellsBlocker
-				fmt.Println("sent message")
-			default: fmt.Println("no message sent")}
+			default:
+				fmt.Println("no message received")
+			}
 			liveCellsCount.AliveCellsCount = countCells(req)
 			liveCellsCount.Turn = Turn
 			cpyWorld = copySlice(oWorld)

@@ -47,7 +47,7 @@ func runWorker(WorkerSocket,BottomSocket string,section [][]uint8,blockLen,turns
 	fmt.Println("Worker: " + WorkerSocket)
 	client, err := rpc.Dial("tcp", WorkerSocket)
 	if largerSection{
-		workers = append(workers,worker{client: client,ImageHeight:ImageHeight-(len(workers)*blockLen)+2,ImageWidth:len(section[0])})
+		workers = append(workers,worker{client: client,ImageHeight:ImageHeight-(len(workers)+1*blockLen)+2,ImageWidth:len(section[0])})
 	}else{
 		workers = append(workers,worker{client: client,ImageHeight:blockLen+2,ImageWidth:len(section[0])})
 	}
@@ -57,7 +57,7 @@ func runWorker(WorkerSocket,BottomSocket string,section [][]uint8,blockLen,turns
 	//ImageHeight passed includes the halos
 	request := stubsBrokerToWorker.Request{WorldSection:section,ImageHeight:blockLen+2,ImageWidth:len(section[0]) ,Turns: turns,BottomSocketAddress: BottomSocket}
 	if largerSection{
-		request = stubsBrokerToWorker.Request{WorldSection:section,ImageHeight:ImageHeight-(len(workers)*blockLen)+2,ImageWidth:len(section[0]) ,Turns: turns,BottomSocketAddress: BottomSocket}
+		request = stubsBrokerToWorker.Request{WorldSection:section,ImageHeight:ImageHeight-(len(workers)+1*blockLen)+2,ImageWidth:len(section[0]) ,Turns: turns,BottomSocketAddress: BottomSocket}
 	}
 
 	err = client.Call(stubsBrokerToWorker.ProcessWorldHandler, request, response)

@@ -43,15 +43,23 @@ func makeWorkerSlice(world [][]uint8, blockLen,blockNo int) [][]uint8 {
 	return worldSection
 }
 
-func runWorker(WorkerSocket,BottomSocket string,section [][]uint8,blockLen,turns int, finishedSection chan<- [][]uint8, interrupt chan<- bool) {
+func runWorker(WorkerSocket,BottomSocket string,section [][]uint8,blockLen,turns int, finishedSection chan<- [][]uint8, interrupt chan<- bool, largerSection bool) {
 	fmt.Println("Worker: " + WorkerSocket)
 	client, err := rpc.Dial("tcp", WorkerSocket)
-	workers = append(workers,worker{client: client,ImageHeight:blockLen+2,ImageWidth:len(section[0])})
+	if largerSection{
+		workers = append(workers,worker{client: client,ImageHeight:blockLen+2,ImageWidth:len(section[0])})
+	}else{
+		workers = append(workers,worker{client: client,ImageHeight:blockLen+2,ImageWidth:len(section[0])})
+	}
 	if err != nil {panic(err)}
 	defer client.Close()
 	response := new(stubsBrokerToWorker.Response)
 	//ImageHeight passed includes the halos
 	request := stubsBrokerToWorker.Request{WorldSection:section,ImageHeight:blockLen+2,ImageWidth:len(section[0]) ,Turns: turns,BottomSocketAddress: BottomSocket}
+	if largerSection{
+		request = stubsBrokerToWorker.Request{WorldSection:section,ImageHeight:ImageHeight-(len(workers)*blockLen)+2,ImageWidth:len(section[0]) ,Turns: turns,BottomSocketAddress: BottomSocket}
+	}
+
 	err = client.Call(stubsBrokerToWorker.ProcessWorldHandler, request, response)
 	if err != nil {panic(err)}
 	finishedSection <- response.ProcessedSection
@@ -112,7 +120,7 @@ func (s *GameOfLife) ProcessWorld(req stubsClientToBroker.Request, res *stubsCli
 			BottomSocket := workerAddresses[(blockCount+workers+1)%workers]
 			worldSection := makeWorkerSlice(req.WorldSection,blockLen,blockCount)
 			outChannels = append(outChannels, make(chan [][]uint8))
-			go runWorker(workerAddresses[blockCount],BottomSocket,worldSection,blockLen,req.Turns,outChannels[blockCount], interrupt)
+			go runWorker(workerAddresses[blockCount],BottomSocket,worldSection,blockLen,req.Turns,outChannels[blockCount], interrupt, false)
 			blockCount++
 			if blockCount == workers-1 && req.ImageHeight-(yPos+blockLen) > blockLen {break}
 		}
@@ -124,7 +132,7 @@ func (s *GameOfLife) ProcessWorld(req stubsClientToBroker.Request, res *stubsCli
 				worldSection[x-blockLen*blockCount] = req.WorldSection[(x-1+ImageHeight) % ImageHeight]
 			}
 			outChannels = append(outChannels, make(chan [][]uint8))
-			go runWorker(workerAddresses[blockCount],BottomSocket,worldSection,blockLen,req.Turns,outChannels[blockCount], interrupt)
+			go runWorker(workerAddresses[blockCount],BottomSocket,worldSection,blockLen,req.Turns,outChannels[blockCount], interrupt, true)
 			blockCount++
 		}
 		finishedWorld := make([][]uint8, 0)

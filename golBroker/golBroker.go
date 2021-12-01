@@ -91,7 +91,7 @@ func (s *GameOfLife) ProcessAliveCellsCount(req stubsClientToBroker.RequestAlive
 	for i,worker := range workers {
 		response := new(stubsBrokerToWorker.ResponseToAliveCellsCount)
 		request := stubsBrokerToWorker.RequestAliveCellsCount{ImageHeight:worker.ImageHeight, ImageWidth:worker.ImageWidth}
-		if i == 0{
+		if i != 0{
 			request = stubsBrokerToWorker.RequestAliveCellsCount{Turn: turnA,ImageHeight:worker.ImageHeight, ImageWidth:worker.ImageWidth}
 		}
 		worker.client.Call(stubsBrokerToWorker.ProcessTimerEventsHandler,request,response)

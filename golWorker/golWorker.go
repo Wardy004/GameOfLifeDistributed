@@ -148,8 +148,8 @@ func (s *GameOfLife) ProcessAliveCellsCount(req stubsBrokerToWorker.RequestAlive
 		res.AliveCellsCount = aliveCells
 	}else{
 		res.Turn = req.Turn
-		res.AliveCellsCount = liveCellCounts[req.Turn]
-		fmt.Println("alive cells is", liveCellCounts[req.Turn], "at turn", req.Turn)
+		res.AliveCellsCount = liveCellCounts[req.Turn-1]
+		fmt.Println("alive cells is", liveCellCounts[req.Turn-1], "at worker 1's turn", req.Turn)
 	}
 	return
 }

@@ -47,7 +47,7 @@ func runWorker(WorkerSocket,BottomSocket string,section [][]uint8,blockLen,turns
 	fmt.Println("Worker: " + WorkerSocket)
 	client, err := rpc.Dial("tcp", WorkerSocket)
 	if largerSection{
-		workers = append(workers,worker{client: client,ImageHeight:blockLen+2,ImageWidth:len(section[0])})
+		workers = append(workers,worker{client: client,ImageHeight:(len(workers)*blockLen)+2,ImageWidth:len(section[0])})
 	}else{
 		workers = append(workers,worker{client: client,ImageHeight:blockLen+2,ImageWidth:len(section[0])})
 	}

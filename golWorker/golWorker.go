@@ -197,7 +197,6 @@ func (s *GameOfLife) ProcessWorld(req stubsBrokerToWorker.Request, res *stubsBro
 			<-RowExchange
 			// Update liveCellsCounts at end of turn
 			liveCellCounts = append(liveCellCounts, countCells(req))
-			fmt.Println("liveCellsCounts are", liveCellCounts)
 			cpyWorld = copySlice(oWorld)
 		}
 	}

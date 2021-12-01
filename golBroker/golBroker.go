@@ -120,7 +120,7 @@ func (s *GameOfLife) ProcessWorld(req stubsClientToBroker.Request, res *stubsCli
 			fmt.Println("giving bigger slice to last worker")
 			BottomSocket := workerAddresses[0]
 			worldSection := makeMatrix(ImageHeight-(blockCount*blockLen)+2, ImageWidth)
-			for x:=blockLen*blockCount;x<blockCount*blockLen+blockLen+2;x++{
+			for x:=blockLen*blockCount;x<ImageHeight;x++{
 				worldSection[x-blockLen*blockCount] = req.WorldSection[(x-1+ImageHeight) % ImageHeight]
 			}
 			outChannels = append(outChannels, make(chan [][]uint8))

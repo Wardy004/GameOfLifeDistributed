@@ -60,7 +60,7 @@ func TestAlive(t *testing.T) {
 				i++
 			}
 		}
-		if i >= 3 {
+		if i >= 5 {
 			keyPresses <- 'q'
 			return
 		}

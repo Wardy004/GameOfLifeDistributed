@@ -15,8 +15,8 @@ func BenchmarkFilter(b *testing.B) {
 	os.Stdout = nil
 
 	var params gol.Params
-	params.ImageWidth = 512
-	params.ImageHeight = 512
+	params.ImageWidth = 5120
+	params.ImageHeight = 5120
 	params.Turns = 100
 	// For-loop to run 5 sub-benchmarks, with 1, 2, 4, 8 and 16 workers.
 	//for threads := 1; threads <= 512; threads*=2 {

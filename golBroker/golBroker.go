@@ -43,21 +43,21 @@ func makeWorkerSlice(world [][]uint8, blockLen,blockNo int) [][]uint8 {
 	return worldSection
 }
 
-func runWorker(WorkerSocket,BottomSocket string,section [][]uint8,blockLen,turns int, finishedSection chan<- [][]uint8, interrupt chan<- bool, largerSection bool) {
+func runWorker(WorkerSocket,BottomSocket string,section [][]uint8,height,turns int, finishedSection chan<- [][]uint8, interrupt chan<- bool, largerSection bool) {
 	fmt.Println("Worker: " + WorkerSocket)
 	client, err := rpc.Dial("tcp", WorkerSocket)
 	if largerSection{
-		workers = append(workers,worker{client: client,ImageHeight:8,ImageWidth:len(section[0])})
+		workers = append(workers,worker{client: client,ImageHeight:height,ImageWidth:len(section[0])})
 	}else{
-		workers = append(workers,worker{client: client,ImageHeight:blockLen+2,ImageWidth:len(section[0])})
+		workers = append(workers,worker{client: client,ImageHeight:height,ImageWidth:len(section[0])})
 	}
 	if err != nil {panic(err)}
 	defer client.Close()
 	response := new(stubsBrokerToWorker.Response)
 	//ImageHeight passed includes the halos
-	request := stubsBrokerToWorker.Request{WorldSection:section,ImageHeight:blockLen+2,ImageWidth:len(section[0]) ,Turns: turns,BottomSocketAddress: BottomSocket}
+	request := stubsBrokerToWorker.Request{WorldSection:section,ImageHeight:height,ImageWidth:len(section[0]) ,Turns: turns,BottomSocketAddress: BottomSocket}
 	if largerSection{
-		request = stubsBrokerToWorker.Request{WorldSection:section,ImageHeight:8,ImageWidth:len(section[0]) ,Turns: turns,BottomSocketAddress: BottomSocket}
+		request = stubsBrokerToWorker.Request{WorldSection:section,ImageHeight:height,ImageWidth:len(section[0]) ,Turns: turns,BottomSocketAddress: BottomSocket}
 	}
 
 	err = client.Call(stubsBrokerToWorker.ProcessWorldHandler, request, response)
@@ -120,19 +120,20 @@ func (s *GameOfLife) ProcessWorld(req stubsClientToBroker.Request, res *stubsCli
 			BottomSocket := workerAddresses[(blockCount+workers+1)%workers]
 			worldSection := makeWorkerSlice(req.WorldSection,blockLen,blockCount)
 			outChannels = append(outChannels, make(chan [][]uint8))
-			go runWorker(workerAddresses[blockCount],BottomSocket,worldSection,blockLen,req.Turns,outChannels[blockCount], interrupt, false)
+			go runWorker(workerAddresses[blockCount],BottomSocket,worldSection,blockLen+2,req.Turns,outChannels[blockCount], interrupt, false)
 			blockCount++
 			if blockCount == workers-1 && req.ImageHeight-(yPos+blockLen) > blockLen {break}
 		}
 		if blockCount != workers {
 			fmt.Println("giving bigger slice to last worker")
 			BottomSocket := workerAddresses[0]
-			worldSection := makeMatrix(ImageHeight-(blockCount*blockLen)+2, ImageWidth)
+			bigSliceHeight := ImageHeight-(blockCount*blockLen)+2
+			worldSection := makeMatrix(bigSliceHeight, ImageWidth)
 			for x:=blockLen*blockCount;x<ImageHeight;x++{
 				worldSection[x-blockLen*blockCount] = req.WorldSection[(x-1+ImageHeight) % ImageHeight]
 			}
 			outChannels = append(outChannels, make(chan [][]uint8))
-			go runWorker(workerAddresses[blockCount],BottomSocket,worldSection,blockLen,req.Turns,outChannels[blockCount], interrupt, true)
+			go runWorker(workerAddresses[blockCount],BottomSocket,worldSection,bigSliceHeight,req.Turns,outChannels[blockCount], interrupt, true)
 			blockCount++
 		}
 		finishedWorld := make([][]uint8, 0)

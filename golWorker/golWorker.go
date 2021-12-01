@@ -177,7 +177,6 @@ func (s *GameOfLife) ProcessWorld(req stubsBrokerToWorker.Request, res *stubsBro
 			cpyWorld[y][x] = oWorld[y][x]
 		}
 	}
-
 	Quit:
 	for Turn < req.Turns {
 		fmt.Println(fmt.Sprintf("Turn: %d",Turn))

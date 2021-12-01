@@ -20,7 +20,11 @@ var Pause chan bool
 var Quit chan bool
 var RowExchange chan bool
 var Shutdown bool
-
+var liveCellsCount = liveCells{}
+type liveCells struct {
+	AliveCellsCount int
+	Turn int
+}
 type GameOfLife struct{}
 
 
@@ -121,8 +125,7 @@ func (s *GameOfLife) ProcessKeyPresses(req stubsKeyPresses.RequestFromKeyPress, 
 	return
 }
 
-func (s *GameOfLife) ProcessAliveCellsCount(req stubsBrokerToWorker.RequestAliveCellsCount , res *stubsBrokerToWorker.ResponseToAliveCellsCount) (err error) {
-	Pause <- true
+func countCells(req stubsBrokerToWorker.Request) int{
 	aliveCells := 0
 	for y := 1; y < req.ImageHeight-1; y++ { //Halo regions avoided
 		for x := 0; x < req.ImageWidth; x++ {
@@ -131,9 +134,14 @@ func (s *GameOfLife) ProcessAliveCellsCount(req stubsBrokerToWorker.RequestAlive
 			}
 		}
 	}
-	fmt.Println("alive cells is", aliveCells, "at turn", Turn)
-	res.Turn = Turn
-	res.AliveCellsCount = aliveCells
+	return aliveCells
+}
+
+func (s *GameOfLife) ProcessAliveCellsCount(req stubsBrokerToWorker.RequestAliveCellsCount , res *stubsBrokerToWorker.ResponseToAliveCellsCount) (err error) {
+	Pause <- true
+	//fmt.Println("alive cells is", aliveCells, "at turn", Turn)
+	res.Turn = liveCellsCount.Turn
+	res.AliveCellsCount = liveCellsCount.AliveCellsCount
 	Pause <- true
 	return
 }
@@ -195,6 +203,9 @@ func (s *GameOfLife) ProcessWorld(req stubsBrokerToWorker.Request, res *stubsBro
 			go getBottomHalo(BottomWorker)
 			<-RowExchange
 			<-RowExchange
+			// Workers are synchronised here, so update aliveCellsCount
+			liveCellsCount.AliveCellsCount = countCells(req)
+			liveCellsCount.Turn = Turn
 			cpyWorld = copySlice(oWorld)
 		}
 	}

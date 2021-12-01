@@ -51,7 +51,7 @@ func makeWorkerSlice(world [][]uint8, blockLen,blockNo int) [][]uint8 {
 	return worldSection
 }
 
-func runWorker(WorkerSocket,BottomSocket string,section [][]uint8,blockLen,turns int, finishedSection chan<- [][]uint8) {
+func runWorker(WorkerSocket,BottomSocket string,section [][]uint8,blockLen,turns int, finishedSection chan<- [][]uint8, interrupt chan<- bool) {
 	fmt.Println("Worker: " + WorkerSocket)
 	client, err := rpc.Dial("tcp", WorkerSocket)
 	workers = append(workers,worker{client: client,ImageHeight:blockLen+2,ImageWidth:len(section[0])})
@@ -110,6 +110,7 @@ func (s *GameOfLife) ProcessWorld(req stubsClientToBroker.Request, res *stubsCli
 	workers := len(workerAddresses)
 	blockLen := int(math.Floor(float64(req.ImageHeight) / float64(workers)))
 	outChannels := make([]chan [][]uint8, 0)
+	interrupt := make(chan bool)
 
 	if workers > 0 && workers <= req.ImageHeight  {
 		//printWorld(req.WorldSection)
@@ -117,7 +118,7 @@ func (s *GameOfLife) ProcessWorld(req stubsClientToBroker.Request, res *stubsCli
 			BottomSocket := workerAddresses[(blockCount+workers+1)%workers]
 			worldSection := makeWorkerSlice(req.WorldSection,blockLen,blockCount)
 			outChannels = append(outChannels, make(chan [][]uint8))
-			go runWorker(workerAddresses[blockCount],BottomSocket,worldSection,blockLen,req.Turns,outChannels[blockCount])
+			go runWorker(workerAddresses[blockCount],BottomSocket,worldSection,blockLen,req.Turns,outChannels[blockCount], interrupt)
 			blockCount++
 			if blockCount == workers-1 && req.ImageHeight-(yPos+blockLen) > blockLen {break}
 		}
@@ -125,7 +126,7 @@ func (s *GameOfLife) ProcessWorld(req stubsClientToBroker.Request, res *stubsCli
 			BottomSocket := workerAddresses[0]
 			worldSection := makeWorkerSlice(req.WorldSection,blockLen,blockCount)
 			outChannels = append(outChannels, make(chan [][]uint8))
-			go runWorker(workerAddresses[blockCount],BottomSocket,worldSection,blockLen,req.Turns,outChannels[blockCount])
+			go runWorker(workerAddresses[blockCount],BottomSocket,worldSection,blockLen,req.Turns,outChannels[blockCount], interrupt)
 			blockCount++
 		}
 		finishedWorld := make([][]uint8, 0)
